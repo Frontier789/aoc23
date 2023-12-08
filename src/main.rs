@@ -766,17 +766,16 @@ fn problem5b(do_print: bool, folder: &str) {
         //     println!();
         // }
     }
-
-    if do_print {
-        println!(
-            "Problem 5 B: {}",
-            seed_ranges
+    
+    let minimum = seed_ranges
                 .into_iter()
                 .filter(|r| !r.empty())
                 .map(|r| r.begin)
                 .min()
-                .unwrap()
-        );
+                .unwrap();
+
+    if do_print {
+        println!("Problem 5 B: {}", minimum);
     }
 }
 
@@ -855,9 +854,138 @@ fn problem6ab(do_print: bool, folder: &str) {
     }
 }
 
+fn problem7a(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/7.in").unwrap();
+    
+    let card_value = |card: u8| -> u8 {
+        let card = card as char;
+        
+        if card <= '9' && card >= '2' { return card as u8 - '2' as u8; }
+        
+        match card as char {
+            'T' => 8,
+            'J' => 9,
+            'Q' => 10,
+            'K' => 11,
+            'A' => 12,
+            _ => 0
+        }
+    };
+    
+    let mut all_hands: [Vec<_>; 7] = Default::default();
+    
+    let mut i = 0;
+    while i < data.len() {
+        let cv0 = card_value(data[i+0]) as usize;
+        let cv1 = card_value(data[i+1]) as usize;
+        let cv2 = card_value(data[i+2]) as usize;
+        let cv3 = card_value(data[i+3]) as usize;
+        let cv4 = card_value(data[i+4]) as usize;
+        
+        let power = ((cv0 as u32)<<16) + 
+                         ((cv1 as u32)<<12) + 
+                         ((cv2 as u32)<<8) + 
+                         ((cv3 as u32)<<4) + 
+                         ((cv4 as u32)<<0);
+        
+        let o0 = 1
+        + (data[i+0] == data[i+1]) as u32
+        + (data[i+0] == data[i+2]) as u32
+        + (data[i+0] == data[i+3]) as u32
+        + (data[i+0] == data[i+4]) as u32;
+        
+        let o1 = 1
+        + (data[i+1] == data[i+0]) as u32
+        + (data[i+1] == data[i+2]) as u32
+        + (data[i+1] == data[i+3]) as u32
+        + (data[i+1] == data[i+4]) as u32;
+        
+        let o2 = 1
+        + (data[i+2] == data[i+0]) as u32
+        + (data[i+2] == data[i+1]) as u32
+        + (data[i+2] == data[i+3]) as u32
+        + (data[i+2] == data[i+4]) as u32;
+        
+        let o3 = 1
+        + (data[i+3] == data[i+0]) as u32
+        + (data[i+3] == data[i+2]) as u32
+        + (data[i+3] == data[i+1]) as u32
+        + (data[i+3] == data[i+4]) as u32;
+        
+        let o4 = 1
+        + (data[i+4] == data[i+0]) as u32
+        + (data[i+4] == data[i+2]) as u32
+        + (data[i+4] == data[i+3]) as u32
+        + (data[i+4] == data[i+1]) as u32;
+        
+        let mut freqs = [0; 6];
+        freqs[o0 as usize] += 1;
+        freqs[o1 as usize] += 1;
+        freqs[o2 as usize] += 1;
+        freqs[o3 as usize] += 1;
+        freqs[o4 as usize] += 1;
+        
+        let strength = 
+        if freqs[5] == 5 {6}
+        else if freqs[4] == 4 {5}
+        else if freqs[3] == 3 && freqs[2] == 2 {4}
+        else if freqs[3] == 3 {3}
+        else if freqs[2] == 4 {2}
+        else if freqs[2] == 2 {1}
+        else {0};
+
+        i+=6;
+        
+        let mut bet = 0;
+        
+        while data[i] as char != '\n' {
+            bet = bet * 10 + data[i] as u32 - '0' as u32;
+            i+=1;
+        }
+        i+=1; // linefeed \n
+        
+        all_hands[strength].push((power << 12) + bet);
+        
+        // if do_print { 
+        //     println!("Hand: {:?}, Occurrences: {:?}, Power: {:#020b}, Strength: {}, Bet: {}", 
+        //         hand.iter().map(|u|*u as char).collect::<String>(),
+        //         occurrences, 
+        //         power, 
+        //         strength, 
+        //         bet); 
+        // }
+    }
+    
+    // if do_print {
+    //     println!("{:?}", all_hands);
+    // }
+    
+    // if do_print {
+    //     println!("{:?}", all_hands.iter_mut().map(|h|h.len()).collect::<Vec<_>>());
+    // }
+    
+    let mut sum = 0;
+    
+    let mut multiplier = 1u32;
+    for hands in all_hands.iter_mut() {
+        hands.sort();
+        
+        for bet_and_power in hands {
+            let bet = *bet_and_power & 0xFFFu32;
+            sum += bet * multiplier;
+            multiplier += 1;
+        }
+    }
+    
+    if do_print {
+        println!("Problem 7 A: {}", sum);
+    }
+}
+
 fn main() {
     let problems = [
         problem1ab, problem2ab, problem3ab, problem4ab, problem5a, problem5b, problem6ab,
+        problem7a,
     ];
     let folder = "input";
 
