@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use core::fmt::{Debug, Display};
 use std::cmp::{max, min};
 use std::time::Duration;
@@ -854,39 +856,56 @@ fn problem6ab(do_print: bool, folder: &str) {
     }
 }
 
-fn problem7a(do_print: bool, folder: &str) {
+fn problem7ab(do_print: bool, folder: &str) {
     let data = std::fs::read(folder.to_owned() + "/7.in").unwrap();
     
     let card_value = |card: u8| -> u8 {
         let card = card as char;
         
-        if card <= '9' && card >= '2' { return card as u8 - '2' as u8; }
+        if card <= '9' && card >= '2' { return card as u8 - '2' as u8 + 1; }
         
         match card as char {
-            'T' => 8,
-            'J' => 9,
-            'Q' => 10,
-            'K' => 11,
-            'A' => 12,
+            'T' => 9,
+            'J' => 10,
+            'Q' => 11,
+            'K' => 12,
+            'A' => 13,
             _ => 0
         }
     };
     
-    let mut all_hands: [Vec<_>; 7] = Default::default();
+    let mut all_hands_a: [Vec<_>; 7] = Default::default();
+    let mut all_hands_b: [Vec<_>; 7] = Default::default();
     
     let mut i = 0;
     while i < data.len() {
-        let cv0 = card_value(data[i+0]) as usize;
-        let cv1 = card_value(data[i+1]) as usize;
-        let cv2 = card_value(data[i+2]) as usize;
-        let cv3 = card_value(data[i+3]) as usize;
-        let cv4 = card_value(data[i+4]) as usize;
-        
-        let power = ((cv0 as u32)<<16) + 
-                         ((cv1 as u32)<<12) + 
-                         ((cv2 as u32)<<8) + 
-                         ((cv3 as u32)<<4) + 
-                         ((cv4 as u32)<<0);
+        let power_a;
+        let power_b;
+        {
+            let cv0 = card_value(data[i+0]) as usize;
+            let cv1 = card_value(data[i+1]) as usize;
+            let cv2 = card_value(data[i+2]) as usize;
+            let cv3 = card_value(data[i+3]) as usize;
+            let cv4 = card_value(data[i+4]) as usize;
+            
+            power_a = ((cv0 as u32)<<16) + 
+                    ((cv1 as u32)<<12) + 
+                    ((cv2 as u32)<<8) + 
+                    ((cv3 as u32)<<4) + 
+                    ((cv4 as u32)<<0);
+            
+            let cv0 = if cv0 == 10 {0} else {cv0};
+            let cv1 = if cv1 == 10 {0} else {cv1};
+            let cv2 = if cv2 == 10 {0} else {cv2};
+            let cv3 = if cv3 == 10 {0} else {cv3};
+            let cv4 = if cv4 == 10 {0} else {cv4};
+            
+            power_b = ((cv0 as u32)<<16) + 
+                    ((cv1 as u32)<<12) + 
+                    ((cv2 as u32)<<8) + 
+                    ((cv3 as u32)<<4) + 
+                    ((cv4 as u32)<<0);
+        }
         
         let o0 = 1
         + (data[i+0] == data[i+1]) as u32
@@ -918,6 +937,13 @@ fn problem7a(do_print: bool, folder: &str) {
         + (data[i+4] == data[i+3]) as u32
         + (data[i+4] == data[i+1]) as u32;
         
+        let js = 
+          (data[i+0] == 'J' as u8) as u32
+        + (data[i+1] == 'J' as u8) as u32
+        + (data[i+2] == 'J' as u8) as u32
+        + (data[i+3] == 'J' as u8) as u32
+        + (data[i+4] == 'J' as u8) as u32;
+        
         let mut freqs = [0; 6];
         freqs[o0 as usize] += 1;
         freqs[o1 as usize] += 1;
@@ -925,14 +951,33 @@ fn problem7a(do_print: bool, folder: &str) {
         freqs[o3 as usize] += 1;
         freqs[o4 as usize] += 1;
         
-        let strength = 
-        if freqs[5] == 5 {6}
-        else if freqs[4] == 4 {5}
-        else if freqs[3] == 3 && freqs[2] == 2 {4}
-        else if freqs[3] == 3 {3}
-        else if freqs[2] == 4 {2}
-        else if freqs[2] == 2 {1}
-        else {0};
+        const FIVE_OF_A_KIND: usize = 6;
+        const FOUR_OF_A_KIND: usize = 5;
+        const FULL_HOUSE: usize = 4;
+        const THREE_OF_A_KIND: usize = 3;
+        const TWO_PAIR: usize = 2;
+        const ONE_PAIR: usize = 1;
+        const HIGH_CARD: usize = 0;
+        
+        let strength_a = 
+        if freqs[5] == 5 {FIVE_OF_A_KIND}
+        else if freqs[4] == 4 {FOUR_OF_A_KIND}
+        else if freqs[3] == 3 && freqs[2] == 2 {FULL_HOUSE}
+        else if freqs[3] == 3 {THREE_OF_A_KIND}
+        else if freqs[2] == 4 {TWO_PAIR}
+        else if freqs[2] == 2 {ONE_PAIR}
+        else {HIGH_CARD};
+        
+        let strength_b = if js == 0 {
+            strength_a
+        } else if strength_a >= FULL_HOUSE {FIVE_OF_A_KIND} 
+          else if strength_a == THREE_OF_A_KIND {FOUR_OF_A_KIND}
+          else if strength_a == ONE_PAIR {THREE_OF_A_KIND}
+          else if strength_a == HIGH_CARD {ONE_PAIR}
+          else {
+            if js == 2 {FOUR_OF_A_KIND}
+            else {FULL_HOUSE}
+          };
 
         i+=6;
         
@@ -944,7 +989,8 @@ fn problem7a(do_print: bool, folder: &str) {
         }
         i+=1; // linefeed \n
         
-        all_hands[strength].push((power << 12) + bet);
+        all_hands_a[strength_a].push((power_a << 12) + bet);
+        all_hands_b[strength_b].push((power_b << 12) + bet);
         
         // if do_print { 
         //     println!("Hand: {:?}, Occurrences: {:?}, Power: {:#020b}, Strength: {}, Bet: {}", 
@@ -957,39 +1003,278 @@ fn problem7a(do_print: bool, folder: &str) {
     }
     
     // if do_print {
-    //     println!("{:?}", all_hands);
+    //     println!("{:?}", all_hands_a);
+    //     println!("{:?}", all_hands_b);
     // }
     
     // if do_print {
-    //     println!("{:?}", all_hands.iter_mut().map(|h|h.len()).collect::<Vec<_>>());
+    //     println!("{:?}", all_hands_a.iter_mut().map(|h|h.len()).collect::<Vec<_>>());
     // }
     
-    let mut sum = 0;
+    let mut sum_a = 0;
     
     let mut multiplier = 1u32;
-    for hands in all_hands.iter_mut() {
+    for hands in all_hands_a.iter_mut() {
         hands.sort();
         
         for bet_and_power in hands {
             let bet = *bet_and_power & 0xFFFu32;
-            sum += bet * multiplier;
+            sum_a += bet * multiplier;
+            multiplier += 1;
+        }
+    }
+    
+    let mut sum_b = 0;
+    
+    let mut multiplier = 1u32;
+    for hands in all_hands_b.iter_mut() {
+        hands.sort();
+        
+        for bet_and_power in hands {
+            let bet = *bet_and_power & 0xFFFu32;
+            sum_b += bet * multiplier;
             multiplier += 1;
         }
     }
     
     if do_print {
-        println!("Problem 7 A: {}", sum);
+        println!("Problem 7 A: {}", sum_a);
+        println!("Problem 7 B: {}", sum_b);
+    }
+}
+
+fn problem8ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/8.in").unwrap();
+    
+    struct BitVec
+    {
+        data: [u32; 10],
+        len: usize,
+    }
+    
+    impl BitVec {
+        fn new() -> BitVec {BitVec{data:[0u32; 10], len:0}}
+        
+        fn add(&mut self, bit: bool)
+        {
+            if self.len >= self.data.len()*32 {
+                panic!("Len too large: {}", self.len);
+            }
+            
+            if bit {
+                let items = self.len / 32;
+                let offset = self.len - items*32;
+                self.data[items] |= 1u32 << offset;
+            }
+            
+            self.len += 1;
+        }
+        
+        fn get(&self, index: usize) -> bool {
+            let index = index;
+            let items = index / 32;
+            let offset = index - items*32;
+            
+            (self.data[items] & 1u32 << offset) > 0
+        }
+    }
+    
+    let mut bitvec = BitVec::new();
+    
+    let mut i = 0;
+    while data[i] as char != '\n' {
+        bitvec.add(data[i] as char == 'L');
+        i+=1;
+    }
+    i+=2;
+    
+    macro_rules! read_id {
+        ($arr:expr,$i:expr) => {
+            ($arr[$i+0] as usize - 'A' as usize)*26*26 + 
+            ($arr[$i+1] as usize - 'A' as usize)*26 +
+            ($arr[$i+2] as usize - 'A' as usize)
+        };
+    }
+    
+    #[allow(unused_macros)]
+    macro_rules! val_into_str {
+        ($value:expr) => {
+            [($value/26/26 + 'A' as usize) as u8 as char, (($value/26)%26 + 'A' as usize) as u8 as char, (($value)%26 + 'A' as usize) as u8 as char].into_iter().collect::<String>()
+        };
+    }
+    
+    let mut ids = [Default::default(); 26*26*26];
+    let node_count;
+    
+    {
+        let mut j = i;
+        let mut next_id: u32 = 0;
+        
+        while j+16 < data.len() {
+            let a = read_id!(data, j);
+            j+=17;
+            
+            ids[a] = next_id;
+            // if do_print { println!("{} got id {}", val_into_str!(a), next_id); }
+            
+            next_id += 1;
+        }
+        
+        node_count = next_id as usize;
+    }
+    
+    struct Node(u32);
+    impl Node {
+        fn make(left: u32, right: u32) -> Node {Node( ((left << 16) + right) as u32 )}
+        fn left(&self) -> u32 { self.0 >> 16 }
+        fn right(&self) -> u32 { self.0 & 0x0000FFFF }
+    }
+    
+    impl Debug for Node {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_tuple("Node").field(&(self.0 >> 16)).field(&(self.0 & 0x0000FFFF)).finish()
+        }
+    }
+    
+    #[derive(Debug, Eq, PartialEq)]
+    enum NodeType {
+        Start,
+        End,
+        Normal
+    }
+    
+    let mut children = Vec::with_capacity(node_count);
+    let mut node_types = Vec::with_capacity(node_count);
+    
+    {
+        let mut j = i;
+        
+        while j+16 < data.len() {
+            let a = read_id!(data, j);
+            let b = read_id!(data, j+7);
+            let c = read_id!(data, j+12);
+            j+=17;
+            
+            let ntype = match a%26 {
+                0 => NodeType::Start,
+                25 => NodeType::End,
+                _ => NodeType::Normal
+            };
+            
+            // if do_print {
+            //     println!("A={}, type={:?}", val_into_str!(a), ntype);
+            // }
+            
+            let b = ids[b];
+            let c = ids[c];
+            children.push(Node::make(b, c));
+            node_types.push(ntype);
+        }
+    }
+    
+    const INFINITY: u32 = 0xFFFFFFFF;
+    
+    let mut dist_to_next_end = vec![INFINITY; node_count * bitvec.len];
+    
+    #[derive(Debug, Copy, Clone)]
+    struct State(u32, u32);
+    impl State {
+        fn make(node_id: u32, decision_id: u32) -> State {State( node_id, decision_id )}
+        fn node_id(&self) -> u32 { self.0 }
+        fn decision_id(&self) -> u32 { self.1 }
+        fn flat_id(&self, node_count: usize) -> usize {self.decision_id() as usize * node_count + self.node_id() as usize}
+    }
+    
+    let mut stack = Vec::new();
+    for j in 0..node_count {
+        if node_types[j] == NodeType::Start {
+            stack.push(State::make(j as u32, 0));
+        }
+    }
+    
+    let mut intermediate_nodes = 0;
+    
+    while let Some(current_state) = stack.last().copied() {
+        let current_id = current_state.node_id() as usize;
+        let decision_id = current_state.decision_id();
+        let left = bitvec.get(decision_id as usize);
+        
+        let kids = &children[current_id];
+        let next_id = if left {kids.left()} else {kids.right()};
+        let next_state = State::make(next_id, (decision_id+1) % bitvec.len as u32);
+        
+        // if do_print {
+        //     println!("At node {}, decision {}, kids {:?}, next is {}", 
+        //               current_id, decision_id,      kids, next_id,
+        //             );
+        // }
+        
+        let has_next_been_processed = dist_to_next_end[next_state.flat_id(node_count)] != INFINITY;
+        
+        
+        if node_types[next_id as usize] == NodeType::End {
+            let mut distance = 1;
+            while intermediate_nodes > 0 {
+                if let Some(back_state) = stack.pop() {
+                    dist_to_next_end[back_state.flat_id(node_count)] = distance;
+                }
+                
+                intermediate_nodes -= 1;
+                distance += 1;
+            }
+        } else {
+            if has_next_been_processed {
+                stack.pop();
+                
+                dist_to_next_end[current_state.flat_id(node_count)] = dist_to_next_end[next_state.flat_id(node_count)]+1;
+                intermediate_nodes = 0;
+            } else {
+                stack.push(next_state);
+                intermediate_nodes += 1;
+            }
+        }
+    }
+    
+    let state_aaa = State::make(ids[0], 0);
+    let answer_a = dist_to_next_end[state_aaa.flat_id(node_count)];
+    
+    let mut least_total_dist = 1;
+    
+    fn gcd(mut m: u64, mut n: u64) -> u64 {
+        while m != 0 {
+            let old_m = m;
+            m = n % m;
+            n = old_m;
+        }
+        n
+    }
+    
+    // assume each ghost moves on a circle, with one start and one end
+    for i in 0..node_count {
+        if node_types[i] == NodeType::Start {
+            let dist = dist_to_next_end[State::make(i as u32, 0).flat_id(node_count)] as u64;
+            least_total_dist = (least_total_dist * dist) / gcd(least_total_dist, dist);
+            
+            // if do_print {
+            //     println!("{} -> {}", i, dist);
+            // }
+        }
+    }
+    
+    if do_print {
+        println!("Problem 8 A: {}", answer_a);
+        println!("Problem 8 B: {}", least_total_dist);
     }
 }
 
 fn main() {
     let problems = [
-        problem1ab, problem2ab, problem3ab, problem4ab, problem5a, problem5b, problem6ab,
-        problem7a,
+        // problem1ab, problem2ab, problem3ab, problem4ab, problem5a, problem5b, problem6ab, problem7ab,
+        problem8ab,
     ];
     let folder = "input";
 
-    let number_of_runs = 10000;
+    let number_of_runs = 1000;
     println!(
         "Running solutions {} times, to collect timing",
         number_of_runs
