@@ -1267,10 +1267,94 @@ fn problem8ab(do_print: bool, folder: &str) {
     }
 }
 
+fn problem9ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/9.in").unwrap();
+    
+    let mut extrapolated = Vec::with_capacity(200);
+    let mut extrapolated_b = Vec::with_capacity(200);
+    
+    let mut i = 0;
+    while i < data.len() {
+        let mut nums = Vec::with_capacity(40);
+        let mut num = 0;
+        let mut neg = false;
+        
+        while data[i] as char != '\n' {
+            if data[i] as char == ' ' {
+                nums.push(num * if neg {-1} else {1});
+                num = 0;
+                neg = false;
+            } else if data[i] as char == '-' {
+                neg = true;
+            } else {
+                num = num * 10 + data[i] as i64 - '0' as i64;
+            }
+            i += 1;
+        }
+        i += 1;
+        
+        nums.push(num * if neg {-1} else {1});
+        
+        // if do_print {
+        //     println!("Line contains numbers: {:?}", nums);
+        // }
+        
+        let mut nums_b = nums.clone();
+        
+        let len = nums.len();
+        let mut n = len - 1;
+        while n >= 1 {
+            for j in 0..n {
+                nums[j] = nums[j+1] - nums[j];
+                nums_b[len - 1 - j] = nums_b[len - 1 - j] - nums_b[len - 2 - j];
+            }
+        
+            // if do_print {
+            //     println!(" -> {:?}", &nums[..n]);
+            // }
+        
+            // if do_print {
+            //     println!(" <- {:?}", &nums_b[len-n..]);
+            // }
+            
+            n -= 1;
+        }
+        
+        // if do_print {
+        //     println!("Num_b is {:?}", nums_b);
+        // }
+        
+        let mut n = len - 2;
+        loop {
+            nums_b[n] = nums_b[n] - nums_b[n+1];
+            if n == 0 {
+                break;
+            }
+            n -= 1;
+        }
+        
+        // if do_print {
+        //     println!("In the end nums_b is {:?}", nums_b);
+        //     println!(" <= {}", nums_b[0]);
+        // }
+        
+        extrapolated.push(nums.into_iter().sum::<i64>());
+        extrapolated_b.push(nums_b[0]);
+    }
+    
+    let answer_a = extrapolated.into_iter().sum::<i64>();
+    let answer_b = extrapolated_b.into_iter().sum::<i64>();
+    
+    if do_print {
+        println!("Problem 9 A: {}", answer_a);
+        println!("Problem 9 B: {}", answer_b);
+    }
+}
+
 fn main() {
     let problems = [
-        // problem1ab, problem2ab, problem3ab, problem4ab, problem5a, problem5b, problem6ab, problem7ab,
-        problem8ab,
+        // problem1ab, problem2ab, problem3ab, problem4ab, problem5a, problem5b, problem6ab, problem7ab, problem8ab,
+        problem9ab,
     ];
     let folder = "input";
 
