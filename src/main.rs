@@ -768,13 +768,13 @@ fn problem5b(do_print: bool, folder: &str) {
         //     println!();
         // }
     }
-    
+
     let minimum = seed_ranges
-                .into_iter()
-                .filter(|r| !r.empty())
-                .map(|r| r.begin)
-                .min()
-                .unwrap();
+        .into_iter()
+        .filter(|r| !r.empty())
+        .map(|r| r.begin)
+        .min()
+        .unwrap();
 
     if do_print {
         println!("Problem 5 B: {}", minimum);
@@ -858,99 +858,100 @@ fn problem6ab(do_print: bool, folder: &str) {
 
 fn problem7ab(do_print: bool, folder: &str) {
     let data = std::fs::read(folder.to_owned() + "/7.in").unwrap();
-    
+
     let card_value = |card: u8| -> u8 {
         let card = card as char;
-        
-        if card <= '9' && card >= '2' { return card as u8 - '2' as u8 + 1; }
-        
+
+        if card <= '9' && card >= '2' {
+            return card as u8 - '2' as u8 + 1;
+        }
+
         match card as char {
             'T' => 9,
             'J' => 10,
             'Q' => 11,
             'K' => 12,
             'A' => 13,
-            _ => 0
+            _ => 0,
         }
     };
-    
+
     let mut all_hands_a: [Vec<_>; 7] = Default::default();
     let mut all_hands_b: [Vec<_>; 7] = Default::default();
-    
+
     let mut i = 0;
     while i < data.len() {
         let power_a;
         let power_b;
         {
-            let cv0 = card_value(data[i+0]) as usize;
-            let cv1 = card_value(data[i+1]) as usize;
-            let cv2 = card_value(data[i+2]) as usize;
-            let cv3 = card_value(data[i+3]) as usize;
-            let cv4 = card_value(data[i+4]) as usize;
-            
-            power_a = ((cv0 as u32)<<16) + 
-                    ((cv1 as u32)<<12) + 
-                    ((cv2 as u32)<<8) + 
-                    ((cv3 as u32)<<4) + 
-                    ((cv4 as u32)<<0);
-            
-            let cv0 = if cv0 == 10 {0} else {cv0};
-            let cv1 = if cv1 == 10 {0} else {cv1};
-            let cv2 = if cv2 == 10 {0} else {cv2};
-            let cv3 = if cv3 == 10 {0} else {cv3};
-            let cv4 = if cv4 == 10 {0} else {cv4};
-            
-            power_b = ((cv0 as u32)<<16) + 
-                    ((cv1 as u32)<<12) + 
-                    ((cv2 as u32)<<8) + 
-                    ((cv3 as u32)<<4) + 
-                    ((cv4 as u32)<<0);
+            let cv0 = card_value(data[i + 0]) as usize;
+            let cv1 = card_value(data[i + 1]) as usize;
+            let cv2 = card_value(data[i + 2]) as usize;
+            let cv3 = card_value(data[i + 3]) as usize;
+            let cv4 = card_value(data[i + 4]) as usize;
+
+            power_a = ((cv0 as u32) << 16)
+                + ((cv1 as u32) << 12)
+                + ((cv2 as u32) << 8)
+                + ((cv3 as u32) << 4)
+                + ((cv4 as u32) << 0);
+
+            let cv0 = if cv0 == 10 { 0 } else { cv0 };
+            let cv1 = if cv1 == 10 { 0 } else { cv1 };
+            let cv2 = if cv2 == 10 { 0 } else { cv2 };
+            let cv3 = if cv3 == 10 { 0 } else { cv3 };
+            let cv4 = if cv4 == 10 { 0 } else { cv4 };
+
+            power_b = ((cv0 as u32) << 16)
+                + ((cv1 as u32) << 12)
+                + ((cv2 as u32) << 8)
+                + ((cv3 as u32) << 4)
+                + ((cv4 as u32) << 0);
         }
-        
+
         let o0 = 1
-        + (data[i+0] == data[i+1]) as u32
-        + (data[i+0] == data[i+2]) as u32
-        + (data[i+0] == data[i+3]) as u32
-        + (data[i+0] == data[i+4]) as u32;
-        
+            + (data[i + 0] == data[i + 1]) as u32
+            + (data[i + 0] == data[i + 2]) as u32
+            + (data[i + 0] == data[i + 3]) as u32
+            + (data[i + 0] == data[i + 4]) as u32;
+
         let o1 = 1
-        + (data[i+1] == data[i+0]) as u32
-        + (data[i+1] == data[i+2]) as u32
-        + (data[i+1] == data[i+3]) as u32
-        + (data[i+1] == data[i+4]) as u32;
-        
+            + (data[i + 1] == data[i + 0]) as u32
+            + (data[i + 1] == data[i + 2]) as u32
+            + (data[i + 1] == data[i + 3]) as u32
+            + (data[i + 1] == data[i + 4]) as u32;
+
         let o2 = 1
-        + (data[i+2] == data[i+0]) as u32
-        + (data[i+2] == data[i+1]) as u32
-        + (data[i+2] == data[i+3]) as u32
-        + (data[i+2] == data[i+4]) as u32;
-        
+            + (data[i + 2] == data[i + 0]) as u32
+            + (data[i + 2] == data[i + 1]) as u32
+            + (data[i + 2] == data[i + 3]) as u32
+            + (data[i + 2] == data[i + 4]) as u32;
+
         let o3 = 1
-        + (data[i+3] == data[i+0]) as u32
-        + (data[i+3] == data[i+2]) as u32
-        + (data[i+3] == data[i+1]) as u32
-        + (data[i+3] == data[i+4]) as u32;
-        
+            + (data[i + 3] == data[i + 0]) as u32
+            + (data[i + 3] == data[i + 2]) as u32
+            + (data[i + 3] == data[i + 1]) as u32
+            + (data[i + 3] == data[i + 4]) as u32;
+
         let o4 = 1
-        + (data[i+4] == data[i+0]) as u32
-        + (data[i+4] == data[i+2]) as u32
-        + (data[i+4] == data[i+3]) as u32
-        + (data[i+4] == data[i+1]) as u32;
-        
-        let js = 
-          (data[i+0] == 'J' as u8) as u32
-        + (data[i+1] == 'J' as u8) as u32
-        + (data[i+2] == 'J' as u8) as u32
-        + (data[i+3] == 'J' as u8) as u32
-        + (data[i+4] == 'J' as u8) as u32;
-        
+            + (data[i + 4] == data[i + 0]) as u32
+            + (data[i + 4] == data[i + 2]) as u32
+            + (data[i + 4] == data[i + 3]) as u32
+            + (data[i + 4] == data[i + 1]) as u32;
+
+        let js = (data[i + 0] == 'J' as u8) as u32
+            + (data[i + 1] == 'J' as u8) as u32
+            + (data[i + 2] == 'J' as u8) as u32
+            + (data[i + 3] == 'J' as u8) as u32
+            + (data[i + 4] == 'J' as u8) as u32;
+
         let mut freqs = [0; 6];
         freqs[o0 as usize] += 1;
         freqs[o1 as usize] += 1;
         freqs[o2 as usize] += 1;
         freqs[o3 as usize] += 1;
         freqs[o4 as usize] += 1;
-        
+
         const FIVE_OF_A_KIND: usize = 6;
         const FOUR_OF_A_KIND: usize = 5;
         const FULL_HOUSE: usize = 4;
@@ -958,85 +959,99 @@ fn problem7ab(do_print: bool, folder: &str) {
         const TWO_PAIR: usize = 2;
         const ONE_PAIR: usize = 1;
         const HIGH_CARD: usize = 0;
-        
-        let strength_a = 
-        if freqs[5] == 5 {FIVE_OF_A_KIND}
-        else if freqs[4] == 4 {FOUR_OF_A_KIND}
-        else if freqs[3] == 3 && freqs[2] == 2 {FULL_HOUSE}
-        else if freqs[3] == 3 {THREE_OF_A_KIND}
-        else if freqs[2] == 4 {TWO_PAIR}
-        else if freqs[2] == 2 {ONE_PAIR}
-        else {HIGH_CARD};
-        
+
+        let strength_a = if freqs[5] == 5 {
+            FIVE_OF_A_KIND
+        } else if freqs[4] == 4 {
+            FOUR_OF_A_KIND
+        } else if freqs[3] == 3 && freqs[2] == 2 {
+            FULL_HOUSE
+        } else if freqs[3] == 3 {
+            THREE_OF_A_KIND
+        } else if freqs[2] == 4 {
+            TWO_PAIR
+        } else if freqs[2] == 2 {
+            ONE_PAIR
+        } else {
+            HIGH_CARD
+        };
+
         let strength_b = if js == 0 {
             strength_a
-        } else if strength_a >= FULL_HOUSE {FIVE_OF_A_KIND} 
-          else if strength_a == THREE_OF_A_KIND {FOUR_OF_A_KIND}
-          else if strength_a == ONE_PAIR {THREE_OF_A_KIND}
-          else if strength_a == HIGH_CARD {ONE_PAIR}
-          else {
-            if js == 2 {FOUR_OF_A_KIND}
-            else {FULL_HOUSE}
-          };
+        } else if strength_a >= FULL_HOUSE {
+            FIVE_OF_A_KIND
+        } else if strength_a == THREE_OF_A_KIND {
+            FOUR_OF_A_KIND
+        } else if strength_a == ONE_PAIR {
+            THREE_OF_A_KIND
+        } else if strength_a == HIGH_CARD {
+            ONE_PAIR
+        } else {
+            if js == 2 {
+                FOUR_OF_A_KIND
+            } else {
+                FULL_HOUSE
+            }
+        };
 
-        i+=6;
-        
+        i += 6;
+
         let mut bet = 0;
-        
+
         while data[i] as char != '\n' {
             bet = bet * 10 + data[i] as u32 - '0' as u32;
-            i+=1;
+            i += 1;
         }
-        i+=1; // linefeed \n
-        
+        i += 1; // linefeed \n
+
         all_hands_a[strength_a].push((power_a << 12) + bet);
         all_hands_b[strength_b].push((power_b << 12) + bet);
-        
-        // if do_print { 
-        //     println!("Hand: {:?}, Occurrences: {:?}, Power: {:#020b}, Strength: {}, Bet: {}", 
+
+        // if do_print {
+        //     println!("Hand: {:?}, Occurrences: {:?}, Power: {:#020b}, Strength: {}, Bet: {}",
         //         hand.iter().map(|u|*u as char).collect::<String>(),
-        //         occurrences, 
-        //         power, 
-        //         strength, 
-        //         bet); 
+        //         occurrences,
+        //         power,
+        //         strength,
+        //         bet);
         // }
     }
-    
+
     // if do_print {
     //     println!("{:?}", all_hands_a);
     //     println!("{:?}", all_hands_b);
     // }
-    
+
     // if do_print {
     //     println!("{:?}", all_hands_a.iter_mut().map(|h|h.len()).collect::<Vec<_>>());
     // }
-    
+
     let mut sum_a = 0;
-    
+
     let mut multiplier = 1u32;
     for hands in all_hands_a.iter_mut() {
         hands.sort();
-        
+
         for bet_and_power in hands {
             let bet = *bet_and_power & 0xFFFu32;
             sum_a += bet * multiplier;
             multiplier += 1;
         }
     }
-    
+
     let mut sum_b = 0;
-    
+
     let mut multiplier = 1u32;
     for hands in all_hands_b.iter_mut() {
         hands.sort();
-        
+
         for bet_and_power in hands {
             let bet = *bet_and_power & 0xFFFu32;
             sum_b += bet * multiplier;
             multiplier += 1;
         }
     }
-    
+
     if do_print {
         println!("Problem 7 A: {}", sum_a);
         println!("Problem 7 B: {}", sum_b);
@@ -1045,201 +1060,93 @@ fn problem7ab(do_print: bool, folder: &str) {
 
 fn problem8ab(do_print: bool, folder: &str) {
     let data = std::fs::read(folder.to_owned() + "/8.in").unwrap();
-    
-    struct BitVec
-    {
-        data: [u32; 10],
-        len: usize,
-    }
-    
-    impl BitVec {
-        fn new() -> BitVec {BitVec{data:[0u32; 10], len:0}}
-        
-        fn add(&mut self, bit: bool)
-        {
-            if self.len >= self.data.len()*32 {
-                panic!("Len too large: {}", self.len);
-            }
-            
-            if bit {
-                let items = self.len / 32;
-                let offset = self.len - items*32;
-                self.data[items] |= 1u32 << offset;
-            }
-            
-            self.len += 1;
-        }
-        
-        fn get(&self, index: usize) -> bool {
-            let index = index;
-            let items = index / 32;
-            let offset = index - items*32;
-            
-            (self.data[items] & 1u32 << offset) > 0
-        }
-    }
-    
-    let mut bitvec = BitVec::new();
-    
+
+    let mut bitvec: Vec<u8> = Vec::new();
+
     let mut i = 0;
     while data[i] as char != '\n' {
-        bitvec.add(data[i] as char == 'L');
-        i+=1;
+        bitvec.push((data[i] as char == 'L') as _);
+        i += 1;
     }
-    i+=2;
-    
+    i += 2;
+
     macro_rules! read_id {
         ($arr:expr,$i:expr) => {
-            ($arr[$i+0] as usize - 'A' as usize)*26*26 + 
-            ($arr[$i+1] as usize - 'A' as usize)*26 +
-            ($arr[$i+2] as usize - 'A' as usize)
+            ($arr[$i + 0] as usize - 'A' as usize) * 26 * 26
+                + ($arr[$i + 1] as usize - 'A' as usize) * 26
+                + ($arr[$i + 2] as usize - 'A' as usize)
         };
     }
-    
+
     #[allow(unused_macros)]
     macro_rules! val_into_str {
         ($value:expr) => {
-            [($value/26/26 + 'A' as usize) as u8 as char, (($value/26)%26 + 'A' as usize) as u8 as char, (($value)%26 + 'A' as usize) as u8 as char].into_iter().collect::<String>()
+            [
+                ($value / 26 / 26 + 'A' as usize) as u8 as char,
+                (($value / 26) % 26 + 'A' as usize) as u8 as char,
+                (($value) % 26 + 'A' as usize) as u8 as char,
+            ]
+            .into_iter()
+            .collect::<String>()
         };
     }
-    
-    let mut ids = [Default::default(); 26*26*26];
+
+    let mut ids = [Default::default(); 26 * 26 * 26];
     let node_count;
-    
+
     {
         let mut j = i;
         let mut next_id: u32 = 0;
-        
-        while j+16 < data.len() {
+
+        while j + 16 < data.len() {
             let a = read_id!(data, j);
-            j+=17;
-            
+            j += 17;
+
             ids[a] = next_id;
             // if do_print { println!("{} got id {}", val_into_str!(a), next_id); }
-            
+
             next_id += 1;
         }
-        
+
         node_count = next_id as usize;
     }
-    
-    struct Node(u32);
-    impl Node {
-        fn make(left: u32, right: u32) -> Node {Node( ((left << 16) + right) as u32 )}
-        fn left(&self) -> u32 { self.0 >> 16 }
-        fn right(&self) -> u32 { self.0 & 0x0000FFFF }
-    }
-    
-    impl Debug for Node {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            f.debug_tuple("Node").field(&(self.0 >> 16)).field(&(self.0 & 0x0000FFFF)).finish()
-        }
-    }
-    
+
     #[derive(Debug, Eq, PartialEq)]
     enum NodeType {
         Start,
         End,
-        Normal
+        Normal,
     }
-    
+
     let mut children = Vec::with_capacity(node_count);
     let mut node_types = Vec::with_capacity(node_count);
-    
+
     {
         let mut j = i;
-        
-        while j+16 < data.len() {
+
+        while j + 16 < data.len() {
             let a = read_id!(data, j);
-            let b = read_id!(data, j+7);
-            let c = read_id!(data, j+12);
-            j+=17;
-            
-            let ntype = match a%26 {
+            let b = read_id!(data, j + 7);
+            let c = read_id!(data, j + 12);
+            j += 17;
+
+            let ntype = match a % 26 {
                 0 => NodeType::Start,
                 25 => NodeType::End,
-                _ => NodeType::Normal
+                _ => NodeType::Normal,
             };
-            
+
             // if do_print {
             //     println!("A={}, type={:?}", val_into_str!(a), ntype);
             // }
-            
+
             let b = ids[b];
             let c = ids[c];
-            children.push(Node::make(b, c));
+            children.push((b, c));
             node_types.push(ntype);
         }
     }
-    
-    const INFINITY: u32 = 0xFFFFFFFF;
-    
-    let mut dist_to_next_end = vec![INFINITY; node_count * bitvec.len];
-    
-    #[derive(Debug, Copy, Clone)]
-    struct State(u32, u32);
-    impl State {
-        fn make(node_id: u32, decision_id: u32) -> State {State( node_id, decision_id )}
-        fn node_id(&self) -> u32 { self.0 }
-        fn decision_id(&self) -> u32 { self.1 }
-        fn flat_id(&self, node_count: usize) -> usize {self.decision_id() as usize * node_count + self.node_id() as usize}
-    }
-    
-    let mut stack = Vec::new();
-    for j in 0..node_count {
-        if node_types[j] == NodeType::Start {
-            stack.push(State::make(j as u32, 0));
-        }
-    }
-    
-    let mut intermediate_nodes = 0;
-    
-    while let Some(current_state) = stack.last().copied() {
-        let current_id = current_state.node_id() as usize;
-        let decision_id = current_state.decision_id();
-        let left = bitvec.get(decision_id as usize);
-        
-        let kids = &children[current_id];
-        let next_id = if left {kids.left()} else {kids.right()};
-        let next_state = State::make(next_id, (decision_id+1) % bitvec.len as u32);
-        
-        // if do_print {
-        //     println!("At node {}, decision {}, kids {:?}, next is {}", 
-        //               current_id, decision_id,      kids, next_id,
-        //             );
-        // }
-        
-        let has_next_been_processed = dist_to_next_end[next_state.flat_id(node_count)] != INFINITY;
-        
-        
-        if node_types[next_id as usize] == NodeType::End {
-            let mut distance = 1;
-            while intermediate_nodes > 0 {
-                if let Some(back_state) = stack.pop() {
-                    dist_to_next_end[back_state.flat_id(node_count)] = distance;
-                }
-                
-                intermediate_nodes -= 1;
-                distance += 1;
-            }
-        } else {
-            if has_next_been_processed {
-                stack.pop();
-                
-                dist_to_next_end[current_state.flat_id(node_count)] = dist_to_next_end[next_state.flat_id(node_count)]+1;
-                intermediate_nodes = 0;
-            } else {
-                stack.push(next_state);
-                intermediate_nodes += 1;
-            }
-        }
-    }
-    
-    let state_aaa = State::make(ids[0], 0);
-    let answer_a = dist_to_next_end[state_aaa.flat_id(node_count)];
-    
-    let mut least_total_dist = 1;
-    
+
     fn gcd(mut m: u64, mut n: u64) -> u64 {
         while m != 0 {
             let old_m = m;
@@ -1248,19 +1155,33 @@ fn problem8ab(do_print: bool, folder: &str) {
         }
         n
     }
-    
-    // assume each ghost moves on a circle, with one start and one end
+
+    let mut least_total_dist = 1;
+    let mut answer_a = 0;
+
     for i in 0..node_count {
         if node_types[i] == NodeType::Start {
-            let dist = dist_to_next_end[State::make(i as u32, 0).flat_id(node_count)] as u64;
-            least_total_dist = (least_total_dist * dist) / gcd(least_total_dist, dist);
-            
+            let mut t = 0;
+            let mut p = i;
+            while node_types[p] != NodeType::End {
+                let left = bitvec[t % bitvec.len()] > 0;
+                let kids = &children[p];
+                p = if left { kids.0 } else { kids.1 } as usize;
+                t += 1;
+            }
+
+            least_total_dist = least_total_dist * t as u64 / gcd(least_total_dist, t as u64);
+
+            if i == ids[0] as usize {
+                answer_a = t;
+            }
+
             // if do_print {
-            //     println!("{} -> {}", i, dist);
+            //     println!("Start: {} len: {}", i, t);
             // }
         }
     }
-    
+
     if do_print {
         println!("Problem 8 A: {}", answer_a);
         println!("Problem 8 B: {}", least_total_dist);
@@ -1269,19 +1190,19 @@ fn problem8ab(do_print: bool, folder: &str) {
 
 fn problem9ab(do_print: bool, folder: &str) {
     let data = std::fs::read(folder.to_owned() + "/9.in").unwrap();
-    
+
     let mut extrapolated = Vec::with_capacity(200);
     let mut extrapolated_b = Vec::with_capacity(200);
-    
+
     let mut i = 0;
     while i < data.len() {
         let mut nums = Vec::with_capacity(40);
         let mut num = 0;
         let mut neg = false;
-        
+
         while data[i] as char != '\n' {
             if data[i] as char == ' ' {
-                nums.push(num * if neg {-1} else {1});
+                nums.push(num * if neg { -1 } else { 1 });
                 num = 0;
                 neg = false;
             } else if data[i] as char == '-' {
@@ -1292,59 +1213,59 @@ fn problem9ab(do_print: bool, folder: &str) {
             i += 1;
         }
         i += 1;
-        
-        nums.push(num * if neg {-1} else {1});
-        
+
+        nums.push(num * if neg { -1 } else { 1 });
+
         // if do_print {
         //     println!("Line contains numbers: {:?}", nums);
         // }
-        
+
         let mut nums_b = nums.clone();
-        
+
         let len = nums.len();
         let mut n = len - 1;
         while n >= 1 {
             for j in 0..n {
-                nums[j] = nums[j+1] - nums[j];
+                nums[j] = nums[j + 1] - nums[j];
                 nums_b[len - 1 - j] = nums_b[len - 1 - j] - nums_b[len - 2 - j];
             }
-        
+
             // if do_print {
             //     println!(" -> {:?}", &nums[..n]);
             // }
-        
+
             // if do_print {
             //     println!(" <- {:?}", &nums_b[len-n..]);
             // }
-            
+
             n -= 1;
         }
-        
+
         // if do_print {
         //     println!("Num_b is {:?}", nums_b);
         // }
-        
+
         let mut n = len - 2;
         loop {
-            nums_b[n] = nums_b[n] - nums_b[n+1];
+            nums_b[n] = nums_b[n] - nums_b[n + 1];
             if n == 0 {
                 break;
             }
             n -= 1;
         }
-        
+
         // if do_print {
         //     println!("In the end nums_b is {:?}", nums_b);
         //     println!(" <= {}", nums_b[0]);
         // }
-        
+
         extrapolated.push(nums.into_iter().sum::<i64>());
         extrapolated_b.push(nums_b[0]);
     }
-    
+
     let answer_a = extrapolated.into_iter().sum::<i64>();
     let answer_b = extrapolated_b.into_iter().sum::<i64>();
-    
+
     if do_print {
         println!("Problem 9 A: {}", answer_a);
         println!("Problem 9 B: {}", answer_b);
@@ -1353,87 +1274,108 @@ fn problem9ab(do_print: bool, folder: &str) {
 
 fn problem10ab(do_print: bool, folder: &str) {
     let data = std::fs::read(folder.to_owned() + "/10.in").unwrap();
-    
+
     let mut w = 0;
-    while data[w] as char != '\n' {w += 1;}
+    while data[w] as char != '\n' {
+        w += 1;
+    }
     let w = w;
-    
-    let h = data.len() / (w+1);
-    
+
+    let h = data.len() / (w + 1);
+
     // if do_print {
     //     println!("WxH = {}x{}", w, h);
     // }
-    
+
     #[derive(Debug, Copy, Clone)]
+    #[repr(u32)]
     enum Direction {
         Left,
         Right,
         Up,
-        Down
+        Down,
     }
-    
+
     #[derive(Debug, Copy, Clone, Eq, PartialEq)]
     struct Location(i32, i32);
-    
-    let at = |x, y| {
-        data[y*(w+1) + x] as char
-    };
-    
-    let mut s = Location(0,0);
-    
+
+    let at = |x, y| data[y * (w + 1) + x] as char;
+
+    let mut s = Location(0, 0);
+
     's_finding: for i in 0..w {
         for j in 0..h {
-            if at(i,j) == 'S' {
+            if at(i, j) == 'S' {
                 s = Location(i as i32, j as i32);
                 break 's_finding;
             }
         }
     }
     let s = s;
-    
+
     // if do_print {
     //     println!("Found S at {:?}", s);
     // }
-    
+
     let mut cursors = Vec::new();
-    
+
     let at_safe = |x: i32, y: i32| {
-        if x < 0 || x >= w as i32 || y < 0 || y >= h as i32 {'.'}
-        else {data[y as usize*(w+1) + x as usize] as char}
-    };
-    
-    match at_safe(s.0-1, s.1) { '-' | 'L' | 'F' => cursors.push((Location(s.0-1, s.1), Direction::Left)), _ => () };
-    match at_safe(s.0+1, s.1) { '-' | 'J' | '7' => cursors.push((Location(s.0+1, s.1), Direction::Right)), _ => () };
-    match at_safe(s.0, s.1-1) { '|' | 'F' | '7' => cursors.push((Location(s.0, s.1-1), Direction::Up)), _ => () };
-    match at_safe(s.0, s.1+1) { '|' | 'L' | 'J' => cursors.push((Location(s.0, s.1+1), Direction::Down)), _ => () };
-    
-    let step = |state: (Location, Direction)| {
-        let Location(i, j) = state.0;
-        
-        match (state.1, at(i as usize,j as usize)) {
-            (Direction::Left, '-') => (Location(i-1, j), Direction::Left),
-            (Direction::Left, 'F') => (Location(i, j+1), Direction::Down),
-            (Direction::Left, 'L') => (Location(i, j-1), Direction::Up),
-            
-            (Direction::Right, '-') => (Location(i+1, j), Direction::Right),
-            (Direction::Right, 'J') => (Location(i, j-1), Direction::Up),
-            (Direction::Right, '7') => (Location(i, j+1), Direction::Down),
-            
-            (Direction::Down, '|') => (Location(i, j+1), Direction::Down),
-            (Direction::Down, 'L') => (Location(i+1, j), Direction::Right),
-            (Direction::Down, 'J') => (Location(i-1, j), Direction::Left),
-            
-            (Direction::Up, '|') => (Location(i, j-1), Direction::Up),
-            (Direction::Up, 'F') => (Location(i+1, j), Direction::Right),
-            (Direction::Up, '7') => (Location(i-1, j), Direction::Left),
-            
-            _ => panic!("Run into a corner :( here: {:?} c={}", state, at(i as usize,j as usize))
+        if x < 0 || x >= w as i32 || y < 0 || y >= h as i32 {
+            '.'
+        } else {
+            data[y as usize * (w + 1) + x as usize] as char
         }
     };
-    
+
+    match at_safe(s.0 - 1, s.1) {
+        '-' | 'L' | 'F' => cursors.push((Location(s.0 - 1, s.1), Direction::Left)),
+        _ => (),
+    };
+    match at_safe(s.0 + 1, s.1) {
+        '-' | 'J' | '7' => cursors.push((Location(s.0 + 1, s.1), Direction::Right)),
+        _ => (),
+    };
+    match at_safe(s.0, s.1 - 1) {
+        '|' | 'F' | '7' => cursors.push((Location(s.0, s.1 - 1), Direction::Up)),
+        _ => (),
+    };
+    match at_safe(s.0, s.1 + 1) {
+        '|' | 'L' | 'J' => cursors.push((Location(s.0, s.1 + 1), Direction::Down)),
+        _ => (),
+    };
+
+    let step = |state: (Location, Direction)| {
+        let Location(i, j) = state.0;
+
+        match (state.1, at(i as usize, j as usize)) {
+            (Direction::Left, '-') => (Location(i - 1, j), Direction::Left),
+            (Direction::Left, 'F') => (Location(i, j + 1), Direction::Down),
+            (Direction::Left, 'L') => (Location(i, j - 1), Direction::Up),
+
+            (Direction::Right, '-') => (Location(i + 1, j), Direction::Right),
+            (Direction::Right, 'J') => (Location(i, j - 1), Direction::Up),
+            (Direction::Right, '7') => (Location(i, j + 1), Direction::Down),
+
+            (Direction::Down, '|') => (Location(i, j + 1), Direction::Down),
+            (Direction::Down, 'L') => (Location(i + 1, j), Direction::Right),
+            (Direction::Down, 'J') => (Location(i - 1, j), Direction::Left),
+
+            (Direction::Up, '|') => (Location(i, j - 1), Direction::Up),
+            (Direction::Up, 'F') => (Location(i + 1, j), Direction::Right),
+            (Direction::Up, '7') => (Location(i - 1, j), Direction::Left),
+
+            // _ => panic!(
+            //     "Run into a corner :( here: {:?} c={}",
+            //     state,
+            //     at(i as usize, j as usize)
+            // ),
+            _ => state,
+        }
+    };
+
     let mut c1 = cursors[0];
     let mut c2 = cursors[1];
-    
+
     let real_s = match (c1.1, c2.1) {
         (Direction::Left, Direction::Up) => 'J',
         (Direction::Left, Direction::Right) => '-',
@@ -1447,45 +1389,47 @@ fn problem10ab(do_print: bool, folder: &str) {
         (Direction::Down, Direction::Left) => '7',
         (Direction::Down, Direction::Up) => '|',
         (Direction::Down, Direction::Right) => 'F',
-        _ => panic!("Found weird start: {:?}, {:?}", c1, c2)
+        _ => panic!("Found weird start: {:?}, {:?}", c1, c2),
     };
-    
+
     // if do_print {
     //     println!("Replaced S with {}", real_s);
     // }
-    
+
     // if do_print {
     //     println!("c1 starts at {:?}", c1);
     //     println!("c2 starts at {:?}", c2);
     // }
-    
-    let mut is_edge = vec![false; w*h];
-    
+
+    let mut is_edge = vec![false; w * h];
+
     let mut set_edge = |x, y| {
-        is_edge[y as usize*w + x as usize] = true;
+        is_edge[y as usize * w + x as usize] = true;
     };
-    
+
     set_edge(s.0, s.1);
-    set_edge(c1.0.0, c1.0.1);
-    set_edge(c2.0.0, c2.0.1);
-    
+    set_edge(c1.0 .0, c1.0 .1);
+    set_edge(c2.0 .0, c2.0 .1);
+
     let mut t = 1;
     while c1.0 != c2.0 {
         // if do_print {
         //     println!("At {:?}, {}, {:?}, {}", c1, at(c1.0.0, c1.0.1), c2, at(c2.0.0, c2.0.1));
         // }
-        
+
         c1 = step(c1);
-        set_edge(c1.0.0, c1.0.1);
-        
-        if c1.0 == c2.0 {break;}
-        
+        set_edge(c1.0 .0, c1.0 .1);
+
+        if c1.0 == c2.0 {
+            break;
+        }
+
         c2 = step(c2);
-        set_edge(c2.0.0, c2.0.1);
-        
+        set_edge(c2.0 .0, c2.0 .1);
+
         t += 1;
     }
-    
+
     // if do_print {
     //     for j in 0..h {
     //         for i in 0..w {
@@ -1494,18 +1438,21 @@ fn problem10ab(do_print: bool, folder: &str) {
     //         println!();
     //     }
     // }
-    
+
     let mut area = 0;
-    
+
     for j in 0..h {
         let mut last_turn = None;
         let mut inside = false;
-        
+
         for i in 0..w {
             let mut c = at(i, j);
-            if !is_edge[j*w + i] {c = '.';}
-            else if i == s.0 as usize && j == s.1 as usize {c = real_s;}
-            
+            if !is_edge[j * w + i] {
+                c = '.';
+            } else if i == s.0 as usize && j == s.1 as usize {
+                c = real_s;
+            }
+
             match (last_turn, c) {
                 (_, '|') => inside = !inside,
                 (None, 'F') | (None, 'L') | (None, 'J') | (None, '7') => last_turn = Some(c),
@@ -1513,18 +1460,19 @@ fn problem10ab(do_print: bool, folder: &str) {
                 (Some('F'), 'J') | (Some('L'), '7') => {
                     inside = !inside;
                     last_turn = None;
-                },
+                }
                 (Some('L'), 'J') | (Some('F'), '7') => {
                     last_turn = None;
-                },
+                }
                 (Some('L'), '-') | (Some('F'), '-') => (),
-                _ => panic!("My logic did not expect this: {:?}, {}", last_turn, c),
+                // _ => panic!("My logic did not expect this: {:?}, {}", last_turn, c),
+                _ => (),
             };
-            
-            if !is_edge[j*w + i] && inside {
+
+            if !is_edge[j * w + i] && inside {
                 area += 1;
             }
-            
+
             // if do_print {
             //     if is_edge[j*w + i] {
             //         print!("*");
@@ -1536,17 +1484,121 @@ fn problem10ab(do_print: bool, folder: &str) {
         }
         // if do_print { println!(); }
     }
-    
-    
+
     if do_print {
         println!("Problem 10 A: {}", t);
         println!("Problem 10 B: {}", area);
     }
 }
 
+fn problem11ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/11.in").unwrap();
+
+    let mut w = 0;
+    while data[w] as char != '\n' {
+        w += 1;
+    }
+    let w = w;
+
+    let mut xs = Vec::with_capacity(w * 4);
+    let mut ys = Vec::with_capacity(data.len() / w * 4);
+
+    // if do_print {
+    //     println!("W = {}", w);
+    // }
+
+    let mut y: u32 = 0;
+
+    for i in 0..data.len() {
+        if data[i] as char == '\n' {
+            y += 1;
+            continue;
+        }
+
+        let x: u32 = (i % (w + 1)) as u32;
+
+        if data[i] as char == '#' {
+            xs.push(x);
+            ys.push(y);
+
+            // if do_print {
+            //     println!("Found a galaxy at {},{}", x, y);
+            // }
+        }
+    }
+
+    let sum_along_1d = |arr: &Vec<u32>, expansion_rate: u32| -> u64 {
+        let mut expected = 0;
+        let mut expansion = 0;
+
+        let mut expanded_arr = Vec::with_capacity(arr.len());
+        let mut sum: u64 = 0;
+
+        for i in 0..arr.len() {
+            if arr[i] > expected {
+                expansion += arr[i] - expected;
+            }
+            expected = arr[i] + 1;
+
+            let v = arr[i] + expansion * (expansion_rate - 1);
+            expanded_arr.push(v);
+            sum += v as u64;
+
+            // if do_print {
+            //     println!(
+            //         "X={}, expansion={}, expected={}",
+            //         arr[i], expansion, expected
+            //     );
+            // }
+        }
+
+        let mut right_sum = sum;
+        let mut right_count = arr.len() as u64;
+
+        let mut distance_sum = 0;
+
+        for v in expanded_arr {
+            right_sum -= v as u64;
+            right_count -= 1;
+            let left_sum = sum - right_sum;
+            let left_count = arr.len() as u64 - right_count;
+
+            distance_sum += left_count * v as u64 - left_sum + right_sum - right_count * v as u64;
+        }
+
+        distance_sum
+    };
+
+    // if do_print {
+    //     println!("X: {:?}", xs);
+    //     println!("Y: {:?}", ys);
+    // }
+
+    xs.sort();
+
+    let total_distance_sum_a = (sum_along_1d(&xs, 2) + sum_along_1d(&ys, 2)) / 2;
+    let total_distance_sum_b = (sum_along_1d(&xs, 1000000) + sum_along_1d(&ys, 1000000)) / 2;
+
+    if do_print {
+        println!("Problem 11 A: {}", total_distance_sum_a);
+        println!("Problem 11 B: {}", total_distance_sum_b);
+    }
+}
+
 fn main() {
     let problems = [
-        problem1ab, problem2ab, problem3ab, problem4ab, problem5a, problem5b, problem6ab, problem7ab, problem8ab, problem9ab, problem10ab,
+        problem1ab,
+        problem2ab,
+        problem3ab,
+        problem4ab,
+        problem5a,
+        problem5b,
+        problem6ab,
+        problem7ab,
+        problem8ab,
+        problem9ab,
+        problem10ab,
+        problem11ab,
     ];
     let folder = "input";
 
