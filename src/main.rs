@@ -1351,14 +1351,206 @@ fn problem9ab(do_print: bool, folder: &str) {
     }
 }
 
+fn problem10ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/10.in").unwrap();
+    
+    let mut w = 0;
+    while data[w] as char != '\n' {w += 1;}
+    let w = w;
+    
+    let h = data.len() / (w+1);
+    
+    // if do_print {
+    //     println!("WxH = {}x{}", w, h);
+    // }
+    
+    #[derive(Debug, Copy, Clone)]
+    enum Direction {
+        Left,
+        Right,
+        Up,
+        Down
+    }
+    
+    #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+    struct Location(i32, i32);
+    
+    let at = |x, y| {
+        data[y*(w+1) + x] as char
+    };
+    
+    let mut s = Location(0,0);
+    
+    's_finding: for i in 0..w {
+        for j in 0..h {
+            if at(i,j) == 'S' {
+                s = Location(i as i32, j as i32);
+                break 's_finding;
+            }
+        }
+    }
+    let s = s;
+    
+    // if do_print {
+    //     println!("Found S at {:?}", s);
+    // }
+    
+    let mut cursors = Vec::new();
+    
+    let at_safe = |x: i32, y: i32| {
+        if x < 0 || x >= w as i32 || y < 0 || y >= h as i32 {'.'}
+        else {data[y as usize*(w+1) + x as usize] as char}
+    };
+    
+    match at_safe(s.0-1, s.1) { '-' | 'L' | 'F' => cursors.push((Location(s.0-1, s.1), Direction::Left)), _ => () };
+    match at_safe(s.0+1, s.1) { '-' | 'J' | '7' => cursors.push((Location(s.0+1, s.1), Direction::Right)), _ => () };
+    match at_safe(s.0, s.1-1) { '|' | 'F' | '7' => cursors.push((Location(s.0, s.1-1), Direction::Up)), _ => () };
+    match at_safe(s.0, s.1+1) { '|' | 'L' | 'J' => cursors.push((Location(s.0, s.1+1), Direction::Down)), _ => () };
+    
+    let step = |state: (Location, Direction)| {
+        let Location(i, j) = state.0;
+        
+        match (state.1, at(i as usize,j as usize)) {
+            (Direction::Left, '-') => (Location(i-1, j), Direction::Left),
+            (Direction::Left, 'F') => (Location(i, j+1), Direction::Down),
+            (Direction::Left, 'L') => (Location(i, j-1), Direction::Up),
+            
+            (Direction::Right, '-') => (Location(i+1, j), Direction::Right),
+            (Direction::Right, 'J') => (Location(i, j-1), Direction::Up),
+            (Direction::Right, '7') => (Location(i, j+1), Direction::Down),
+            
+            (Direction::Down, '|') => (Location(i, j+1), Direction::Down),
+            (Direction::Down, 'L') => (Location(i+1, j), Direction::Right),
+            (Direction::Down, 'J') => (Location(i-1, j), Direction::Left),
+            
+            (Direction::Up, '|') => (Location(i, j-1), Direction::Up),
+            (Direction::Up, 'F') => (Location(i+1, j), Direction::Right),
+            (Direction::Up, '7') => (Location(i-1, j), Direction::Left),
+            
+            _ => panic!("Run into a corner :( here: {:?} c={}", state, at(i as usize,j as usize))
+        }
+    };
+    
+    let mut c1 = cursors[0];
+    let mut c2 = cursors[1];
+    
+    let real_s = match (c1.1, c2.1) {
+        (Direction::Left, Direction::Up) => 'J',
+        (Direction::Left, Direction::Right) => '-',
+        (Direction::Left, Direction::Down) => '7',
+        (Direction::Right, Direction::Up) => 'L',
+        (Direction::Right, Direction::Left) => '-',
+        (Direction::Right, Direction::Down) => 'F',
+        (Direction::Up, Direction::Left) => 'J',
+        (Direction::Up, Direction::Down) => '|',
+        (Direction::Up, Direction::Right) => 'L',
+        (Direction::Down, Direction::Left) => '7',
+        (Direction::Down, Direction::Up) => '|',
+        (Direction::Down, Direction::Right) => 'F',
+        _ => panic!("Found weird start: {:?}, {:?}", c1, c2)
+    };
+    
+    // if do_print {
+    //     println!("Replaced S with {}", real_s);
+    // }
+    
+    // if do_print {
+    //     println!("c1 starts at {:?}", c1);
+    //     println!("c2 starts at {:?}", c2);
+    // }
+    
+    let mut is_edge = vec![false; w*h];
+    
+    let mut set_edge = |x, y| {
+        is_edge[y as usize*w + x as usize] = true;
+    };
+    
+    set_edge(s.0, s.1);
+    set_edge(c1.0.0, c1.0.1);
+    set_edge(c2.0.0, c2.0.1);
+    
+    let mut t = 1;
+    while c1.0 != c2.0 {
+        // if do_print {
+        //     println!("At {:?}, {}, {:?}, {}", c1, at(c1.0.0, c1.0.1), c2, at(c2.0.0, c2.0.1));
+        // }
+        
+        c1 = step(c1);
+        set_edge(c1.0.0, c1.0.1);
+        
+        if c1.0 == c2.0 {break;}
+        
+        c2 = step(c2);
+        set_edge(c2.0.0, c2.0.1);
+        
+        t += 1;
+    }
+    
+    // if do_print {
+    //     for j in 0..h {
+    //         for i in 0..w {
+    //             print!("{}", is_edge[j*w + i] as i32);
+    //         }
+    //         println!();
+    //     }
+    // }
+    
+    let mut area = 0;
+    
+    for j in 0..h {
+        let mut last_turn = None;
+        let mut inside = false;
+        
+        for i in 0..w {
+            let mut c = at(i, j);
+            if !is_edge[j*w + i] {c = '.';}
+            else if i == s.0 as usize && j == s.1 as usize {c = real_s;}
+            
+            match (last_turn, c) {
+                (_, '|') => inside = !inside,
+                (None, 'F') | (None, 'L') | (None, 'J') | (None, '7') => last_turn = Some(c),
+                (None, _) => (),
+                (Some('F'), 'J') | (Some('L'), '7') => {
+                    inside = !inside;
+                    last_turn = None;
+                },
+                (Some('L'), 'J') | (Some('F'), '7') => {
+                    last_turn = None;
+                },
+                (Some('L'), '-') | (Some('F'), '-') => (),
+                _ => panic!("My logic did not expect this: {:?}, {}", last_turn, c),
+            };
+            
+            if !is_edge[j*w + i] && inside {
+                area += 1;
+            }
+            
+            // if do_print {
+            //     if is_edge[j*w + i] {
+            //         print!("*");
+            //     } else {
+            //         if inside { print!("I"); }
+            //         else { print!("."); }
+            //     }
+            // }
+        }
+        // if do_print { println!(); }
+    }
+    
+    
+    if do_print {
+        println!("Problem 10 A: {}", t);
+        println!("Problem 10 B: {}", area);
+    }
+}
+
 fn main() {
     let problems = [
-        // problem1ab, problem2ab, problem3ab, problem4ab, problem5a, problem5b, problem6ab, problem7ab, problem8ab,
-        problem9ab,
+        problem1ab, problem2ab, problem3ab, problem4ab, problem5a, problem5b, problem6ab, problem7ab, problem8ab, problem9ab, problem10ab,
     ];
     let folder = "input";
 
-    let number_of_runs = 1000;
+    let number_of_runs = 10000;
     println!(
         "Running solutions {} times, to collect timing",
         number_of_runs
