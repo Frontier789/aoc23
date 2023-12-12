@@ -1578,31 +1578,148 @@ fn problem11ab(do_print: bool, folder: &str) {
 
     let total_distance_sum_a = (sum_along_1d(&xs, 2) + sum_along_1d(&ys, 2)) / 2;
     let total_distance_sum_b = (sum_along_1d(&xs, 1000000) + sum_along_1d(&ys, 1000000)) / 2;
-
+ 
     if do_print {
         println!("Problem 11 A: {}", total_distance_sum_a);
         println!("Problem 11 B: {}", total_distance_sum_b);
     }
 }
 
+fn problem12ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/12.in").unwrap();
+    
+    let mut sum_ways = 0;
+    let mut sum_ways5 = 0;
+    
+    let mut i = 0;
+    while i < data.len() {
+        let mut l = i;
+        while data[l] as char != ' ' { l += 1; }
+        
+        let symbols = &data[i..l];
+        i = l + 1;
+        
+        let mut seq = Vec::new();
+        
+        let mut num = 0;
+        while data[i] as char != '\n' {
+            if data[i] as char == ',' {
+                seq.push(num);
+                num = 0;
+            } else {
+                num = num*10 + (data[i] as usize - '0' as usize);
+            }
+            i += 1;
+        }
+        seq.push(num);
+        i += 1;
+        
+        // if do_print {
+        //     println!("Symbols: {:?}", symbols.iter().map(|b|*b as char).collect::<String>());
+        //     println!("Seq: {:?}", seq);
+        // }
+        
+        let solve = |symbols: &Vec<u8>, seq: &Vec<usize>| {
+            let s = symbols.len();
+            let l = seq.len();
+            
+            let mut ways = vec![0u64; (s+2)*(l+1)];
+            
+            let flat_index = |symbol_index: usize, seq_index: usize| {
+                symbol_index * (l+1) + seq_index
+            };
+            
+            for i in (0..s+2).rev() {
+                if i < s && symbols[i] as char == '#' { break; }
+                
+                ways[flat_index(i, l)] = 1;
+            }
+            
+            for i in (0..s).rev() {
+                for j in (0..l).rev() {
+                    let mut combinations = 0;
+                    
+                    // if do_print { println!("i={}, j={}",i,j); }
+                    // if do_print { println!(" -> symbols={:?}, seq={:?}",&symbols[i..].iter().map(|b|*b as char).collect::<String>(),&seq[j..]); }
+                    
+                    if i+1 < s && symbols[i] as char != '#' {
+                        // if do_print { println!(" -> Can skip one ahead"); }
+                        combinations += ways[flat_index(i+1, j)];
+                    }
+                    
+                    if i + seq[j] <= s {
+                        // if do_print { println!(" -> seq of len {} might fit", seq[j]); }
+                        
+                        let mut valid = i + seq[j] == s || symbols[i + seq[j]] as char != '#';
+                        
+                        // if do_print { if !valid { 
+                        //     println!("  -> Sadly there's a # afterwards thats blocking it"); 
+                        // } }
+                        
+                        for k in i..i+seq[j] {
+                            if valid && symbols[k] as char == '.' {
+                                // if do_print { println!("  -> Sadly there's a . blocking it"); }
+                                valid = false;
+                            }
+                        }
+                        
+                        if valid {
+                            combinations += ways[flat_index(i + seq[j] + 1, j+1)];
+                        }
+                    }
+                    
+                    ways[flat_index(i, j)] = combinations;
+                    
+                    // if do_print { println!(" -> combinations={}",combinations); }
+                }
+            }
+                
+            // if do_print { println!("ways={:?}", ways); }
+            
+            // if do_print {
+            //     println!("Total ways: {}", ways[flat_index(0, 0)]);
+            // }
+            
+            ways[flat_index(0, 0)]
+        };
+        
+        let symbols = symbols.to_vec();
+        let mut symbols5 = Vec::new();
+        for k in 0..5 {
+            if k > 0 { symbols5.push('?' as u8); }
+            for sym in symbols.iter() { symbols5.push(*sym); }
+        }
+        let seq5 = seq.repeat(5);
+        
+        sum_ways += solve(&symbols, &seq);
+        sum_ways5 += solve(&symbols5, &seq5);
+    }
+        
+    if do_print {
+        println!("Problem 12 A: {}", sum_ways);
+        println!("Problem 12 B: {}", sum_ways5);
+    }
+}
+
 fn main() {
     let problems = [
-        problem1ab,
-        problem2ab,
-        problem3ab,
-        problem4ab,
-        problem5a,
-        problem5b,
-        problem6ab,
-        problem7ab,
-        problem8ab,
-        problem9ab,
-        problem10ab,
-        problem11ab,
+        // problem1ab,
+        // problem2ab,
+        // problem3ab,
+        // problem4ab,
+        // problem5a,
+        // problem5b,
+        // problem6ab,
+        // problem7ab,
+        // problem8ab,
+        // problem9ab,
+        // problem10ab,
+        // problem11ab,
+        problem12ab,
     ];
     let folder = "input";
 
-    let number_of_runs = 10000;
+    let number_of_runs = 100;
     println!(
         "Running solutions {} times, to collect timing",
         number_of_runs
