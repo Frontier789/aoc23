@@ -1701,6 +1701,119 @@ fn problem12ab(do_print: bool, folder: &str) {
     }
 }
 
+fn problem13ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/13.in").unwrap();
+
+    let mut sum = 0;
+    let mut sum_b = 0;
+
+    let mut i = 0;
+    while i < data.len() {
+        let mut cols: Vec<u32> = Vec::new();
+        let mut rows: Vec<u32> = Vec::new();
+
+        while i < data.len() && data[i] as char != '\n' {
+            let mut coli = 0;
+            let mut row = 0;
+            while data[i] as char != '\n' {
+                let on = data[i] as char == '#';
+                if coli == cols.len() {
+                    cols.push(0);
+                }
+                cols[coli] = (cols[coli] << 1) + on as u32;
+                row = (row << 1) + on as u32;
+                
+                coli += 1;
+                i += 1;
+            }
+            rows.push(row);
+            i += 1;
+        }
+        i += 1;
+
+        // if do_print {
+        //     print!("Rows_b: "); for v in rows.iter() { print!("{:#011b} ", v); } println!();
+        //     print!("Cols_b: "); for v in cols.iter() { print!("{:#011b} ", v); } println!();
+            
+        //     println!("Rows_v: {:?}", rows);
+        //     println!("Cols_v: {:?}", cols);
+        // }
+
+        let check_reflection_a = |vals: &Vec<u32>| -> Option<u32> {
+            for k in 0..vals.len()-1 {
+                let mut symmetric = true;
+                let mut offset = 0;
+                while symmetric && offset <= k && k+offset+1 < vals.len() {
+                    if vals[k-offset] != vals[k+offset+1] {
+                        symmetric = false;
+                    }
+                    offset += 1;
+                }
+                if symmetric {
+                    return Some(k as u32);
+                }
+            }
+            None
+        };
+
+        let check_reflection_b = |vals: &Vec<u32>| -> Option<u32> {
+            for k in 0..vals.len()-1 {
+                let mut symmetric = true;
+                let mut smudge = false;
+                let mut offset = 0;
+                while symmetric && offset <= k && k+offset+1 < vals.len() {
+                    let a = vals[k-offset];
+                    let b = vals[k+offset+1];
+                    
+                    if a != b {
+                        if !smudge && (a^b).count_ones() == 1 {
+                            smudge = true;
+                        } else {
+                            symmetric = false;
+                        }
+                    }
+                    offset += 1;
+                }
+                if symmetric && smudge {
+                    return Some(k as u32);
+                }
+            }
+            None
+        };
+
+        // if do_print {
+        //     println!(" -> reflection in rowsA: {:?}", check_reflection_a(&rows));
+        //     println!(" -> reflection in colsA: {:?}", check_reflection_a(&cols));
+        // }
+
+        // if do_print {
+        //     println!(" -> reflection in rowsB: {:?}", check_reflection_b(&rows));
+        //     println!(" -> reflection in colsB: {:?}", check_reflection_b(&cols));
+        // }
+
+        if let Some(r) = check_reflection_a(&rows) {
+            sum += 100 * (r+1);
+        }
+        else if let Some(c) = check_reflection_a(&cols) {
+            sum += c+1;
+        }
+
+        if let Some(r) = check_reflection_b(&rows) {
+            sum_b += 100 * (r+1);
+        }
+        else if let Some(c) = check_reflection_b(&cols) {
+            sum_b += c+1;
+        }
+
+        // if do_print { println!(); }
+    }
+
+    if do_print {
+        println!("Problem 13 A: {}", sum);
+        println!("Problem 13 B: {}", sum_b);
+    }
+}
+
 fn main() {
     let problems = [
         // problem1ab,
@@ -1716,6 +1829,7 @@ fn main() {
         // problem10ab,
         // problem11ab,
         problem12ab,
+        // problem13ab,
     ];
     let folder = "input";
 
