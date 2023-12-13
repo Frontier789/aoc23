@@ -1625,14 +1625,28 @@ fn problem12ab(do_print: bool, folder: &str) {
             
             let mut ways = vec![0u64; (s+2)*(l+1)];
             
-            let flat_index = |symbol_index: usize, seq_index: usize| {
-                symbol_index * (l+1) + seq_index
-            };
+            macro_rules! flat_index {
+                ($symbol_index:expr, $seq_index:expr) => {
+                    $symbol_index * (l+1) + $seq_index
+                };
+            }
+
+            let mut next_dot_dist = vec![0; symbols.len()];
+            let mut current_dist = symbols.len();
+            for k in (0..symbols.len()).rev() {
+                if symbols[k] as char == '.' {
+                    current_dist = 0;
+                } else {
+                    current_dist += 1;
+                }
+                next_dot_dist[k] = current_dist;
+            }
+            let next_dot_dist = next_dot_dist;
             
             for i in (0..s+2).rev() {
                 if i < s && symbols[i] as char == '#' { break; }
                 
-                ways[flat_index(i, l)] = 1;
+                ways[flat_index!(i, l)] = 1;
             }
             
             for i in (0..s).rev() {
@@ -1644,7 +1658,7 @@ fn problem12ab(do_print: bool, folder: &str) {
                     
                     if i+1 < s && symbols[i] as char != '#' {
                         // if do_print { println!(" -> Can skip one ahead"); }
-                        combinations += ways[flat_index(i+1, j)];
+                        combinations += ways[flat_index!(i+1, j)];
                     }
                     
                     if i + seq[j] <= s {
@@ -1656,19 +1670,16 @@ fn problem12ab(do_print: bool, folder: &str) {
                         //     println!("  -> Sadly there's a # afterwards thats blocking it"); 
                         // } }
                         
-                        for k in i..i+seq[j] {
-                            if valid && symbols[k] as char == '.' {
-                                // if do_print { println!("  -> Sadly there's a . blocking it"); }
-                                valid = false;
-                            }
+                        if next_dot_dist[i] < seq[j] {
+                            valid = false;
                         }
                         
                         if valid {
-                            combinations += ways[flat_index(i + seq[j] + 1, j+1)];
+                            combinations += ways[flat_index!(i + seq[j] + 1, j+1)];
                         }
                     }
                     
-                    ways[flat_index(i, j)] = combinations;
+                    ways[flat_index!(i, j)] = combinations;
                     
                     // if do_print { println!(" -> combinations={}",combinations); }
                 }
@@ -1677,10 +1688,10 @@ fn problem12ab(do_print: bool, folder: &str) {
             // if do_print { println!("ways={:?}", ways); }
             
             // if do_print {
-            //     println!("Total ways: {}", ways[flat_index(0, 0)]);
+            //     println!("Total ways: {}", ways[flat_index!(0, 0)]);
             // }
             
-            ways[flat_index(0, 0)]
+            ways[flat_index!(0, 0)]
         };
         
         let symbols = symbols.to_vec();
