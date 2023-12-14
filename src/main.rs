@@ -1825,22 +1825,189 @@ fn problem13ab(do_print: bool, folder: &str) {
     }
 }
 
+fn problem14ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/14.in").unwrap();
+
+    let mut w = 0;
+    while data[w] as char != '\n' { w += 1; }
+    let w = w;
+
+    let h = data.len() / (w+1);
+
+    // if do_print {
+    //     println!("W={}, H={}",w,h);
+    // }
+
+    let evaluate_field = |field: &Vec<u8>| {
+        let mut total_score = 0;
+
+        for j in 0..h {
+            for i in 0..w {
+                if field[j*(w+1) + i] as char == 'O' {
+                    total_score += h-j;
+                }
+            }
+        }
+
+        total_score
+    };
+
+    #[allow(unused_variables)]
+    let print_field = |field: &Vec<u8>| {
+        for i in 0..h {
+            println!("{}", field[i*(w+1)..(i+1)*(w+1)-1].iter().map(|b|*b as char).collect::<String>());
+        }
+    };
+
+    let step_north = |field: &mut Vec<u8>| {
+        for i in 0..w {
+            let mut dotj = 0;
+            for j in 0..h {
+                match field[j*(w+1)+i] as char {
+                    'O' => {
+                        if j > dotj {
+                            field[dotj*(w+1)+i] = 'O' as u8;
+                            field[j*(w+1)+i] = '.' as u8;
+                        }
+                        dotj += 1;
+                    },
+                    '#' => {dotj = j+1;},
+                    _ => (),
+                }
+            }
+        }
+    };
+
+    let step_south = |field: &mut Vec<u8>| {
+        for i in 0..w {
+            let mut dotj = h-1;
+            for j in (0..h).rev() {
+                match field[j*(w+1)+i] as char {
+                    'O' => {
+                        if j < dotj {
+                            field[dotj*(w+1)+i] = 'O' as u8;
+                            field[j*(w+1)+i] = '.' as u8;
+                        }
+                        dotj -= 1;
+                    },
+                    '#' => {dotj = j-1;},
+                    _ => (),
+                }
+            }
+        }
+    };
+
+    let step_west = |field: &mut Vec<u8>| {
+        for j in 0..h {
+            let mut doti = 0;
+            for i in 0..w {
+                match field[j*(w+1)+i] as char {
+                    'O' => {
+                        if i > doti {
+                            field[j*(w+1)+doti] = 'O' as u8;
+                            field[j*(w+1)+i] = '.' as u8;
+                        }
+                        doti += 1;
+                    },
+                    '#' => {doti = i+1;},
+                    _ => (),
+                }
+            }
+        }
+    };
+
+    let step_east = |field: &mut Vec<u8>| {
+        for j in 0..h {
+            let mut doti = w-1;
+            for i in (0..w).rev() {
+                match field[j*(w+1)+i] as char {
+                    'O' => {
+                        if i < doti {
+                            field[j*(w+1)+doti] = 'O' as u8;
+                            field[j*(w+1)+i] = '.' as u8;
+                        }
+                        doti -= 1;
+                    },
+                    '#' => {doti = i-1;},
+                    _ => (),
+                }
+            }
+        }
+    };
+
+    let step = |mut field: &mut Vec<u8>| {
+        step_north(&mut field);
+        step_west(&mut field);
+        step_south(&mut field);
+        step_east(&mut field);
+    };
+    
+    let mut field_a = data.clone();
+    step_north(&mut field_a);
+    let score_a = evaluate_field(&field_a);
+    // if do_print {
+    //     println!("Northed field score={}", score_a);
+    //     print_field(&field_a);
+    // }
+
+    let mut field = data.clone();
+
+    let mut values = Vec::new();
+    let mut i = 0;
+
+    loop {
+        let val = evaluate_field(&field);
+        values.push(val);
+        // if do_print && i < 4 {
+        //     println!("It {} val={}",i,val);
+        //     print_field(&field);
+        //     println!();
+        // }
+        if i > 9 && val == values[i/2] 
+                 && values[values.len()-1-1] == values[i/2-1] 
+                 && values[values.len()-1-2] == values[i/2-2] 
+                 && values[values.len()-1-3] == values[i/2-3] 
+                 && values[values.len()-1-4] == values[i/2-4] {
+            break;
+        }
+        step(&mut field);
+        i += 1;
+    };
+
+    let period = i - i/2;
+    const N: usize = 1000000000;
+    let n = (N - i/2) % period + i/2;
+    
+    if do_print {
+        println!("Found a loop: {} -> {}. N maps to {}", i, i/2, n);
+        // println!("values: {:?}", values);
+    }
+
+    let score_b = values[n];
+
+    if do_print {
+        println!("Problem 14 A: {}", score_a);
+        println!("Problem 14 B: {}", score_b);
+    }
+}
+
 fn main() {
     let problems = [
-        // problem1ab,
-        // problem2ab,
-        // problem3ab,
-        // problem4ab,
-        // problem5a,
-        // problem5b,
-        // problem6ab,
-        // problem7ab,
-        // problem8ab,
-        // problem9ab,
-        // problem10ab,
-        // problem11ab,
+        problem1ab,
+        problem2ab,
+        problem3ab,
+        problem4ab,
+        problem5a,
+        problem5b,
+        problem6ab,
+        problem7ab,
+        problem8ab,
+        problem9ab,
+        problem10ab,
+        problem11ab,
         problem12ab,
-        // problem13ab,
+        problem13ab,
+        problem14ab,
     ];
     let folder = "input";
 
