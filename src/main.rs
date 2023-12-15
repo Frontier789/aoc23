@@ -1991,23 +1991,138 @@ fn problem14ab(do_print: bool, folder: &str) {
     }
 }
 
+fn problem15ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/15.in").unwrap();
+
+    let mut sum_a = 0;
+    let mut acc: u32 = 0;
+    for i in 0..data.len() {
+        if data[i] as char == ',' {
+            // if do_print {
+            //     println!("Val: {}", acc);
+            // }
+            sum_a += acc;
+            acc = 0;
+        } else if data[i] as char != '\n' {
+            acc += data[i] as u32;
+            acc *= 17;
+            acc %= 256;
+        }
+    }
+    sum_a += acc;
+
+    #[derive(Clone)]
+    struct Entry(Vec<u8>, i32);
+
+    let mut boxes: Vec<Vec<Entry>> = vec![Vec::with_capacity(8); 256];
+
+    let mut i = 0;
+    while i < data.len() {
+        let mut acc: u32 = 0;
+        
+        let mut j = i;
+        while data[j] as char >= 'a' { // ,-=\n are all smaller than 'a'
+            acc += data[j] as u32;
+            acc *= 17;
+            acc %= 256;
+            j += 1;
+        }
+
+        let id = data[i..j].to_owned();
+
+        let the_box = &mut boxes[acc as usize];
+
+        if data[j] as char == '-' {
+            for Entry(eid, eval) in the_box.iter_mut() {
+                if *eval >= 0 && *eid == id {
+                    *eval = -1;
+                    break;
+                }
+            }
+            j += 2;
+        } else {
+            let val = data[j+1] as i32 - '0' as i32;
+            let mut new_entry = true;
+            for Entry(eid, eval) in the_box.iter_mut().rev() {
+                if *eid == id {
+                    if *eval > 0 {
+                        *eval = val;
+                        new_entry = false;
+                    }
+                    break;
+                }
+            }
+            if new_entry {
+                the_box.push(Entry(id, val));
+            }
+            j += 3;
+        }
+
+        i = j;
+
+        // if do_print {
+        //     for k in 0..256 {
+        //         if boxes[k].len() > 0 {
+        //             print!("Box {}:", k);
+        //             for e in boxes[k].iter() {
+        //                 print!(" [{}, {}]", e.0.iter().map(|b|*b as char).collect::<String>(), e.1);
+        //             }
+        //             println!();
+        //         }
+        //     }
+        //     println!();
+        // }
+    }
+
+    // if do_print {
+    //     for k in 0..256 {
+    //         if boxes[k].len() > 0 {
+    //             print!("Box {}:", k);
+    //             for e in boxes[k].iter() {
+    //                 print!(" [{}, {}]", e.0.iter().map(|b|*b as char).collect::<String>(), e.1);
+    //             }
+    //             println!();
+    //         }
+    //     }
+    //     println!();
+    // }
+
+    let mut sum_b = 0;
+    for k in 0..boxes.len() {
+        let mut slot = 1;
+        for Entry(_, val) in boxes[k].iter() {
+            if *val >= 0 {
+                sum_b += (k as i32+1) * val * slot;
+                slot += 1;
+            }
+        }
+    }
+
+
+    if do_print {
+        println!("Problem 15 A: {}", sum_a);
+        println!("Problem 15 B: {}", sum_b);
+    }
+}
+
 fn main() {
     let problems = [
-        problem1ab,
-        problem2ab,
-        problem3ab,
-        problem4ab,
-        problem5a,
-        problem5b,
-        problem6ab,
-        problem7ab,
-        problem8ab,
-        problem9ab,
-        problem10ab,
-        problem11ab,
-        problem12ab,
-        problem13ab,
-        problem14ab,
+        // problem1ab,
+        // problem2ab,
+        // problem3ab,
+        // problem4ab,
+        // problem5a,
+        // problem5b,
+        // problem6ab,
+        // problem7ab,
+        // problem8ab,
+        // problem9ab,
+        // problem10ab,
+        // problem11ab,
+        // problem12ab,
+        // problem13ab,
+        // problem14ab,
+        problem15ab,
     ];
     let folder = "input";
 
