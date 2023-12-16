@@ -2119,115 +2119,120 @@ fn problem16ab(do_print: bool, folder: &str) {
 
     #[derive(Debug)]
     struct Cursor {
-        x: i32,
-        y: i32,
-        dx: i32,
-        dy: i32
+        val: u32
     }
 
     impl Cursor {
+        fn x(&self) -> i32 {(self.val & 0x00FF) as i32}
+        fn y(&self) -> i32 {((self.val & 0xFF00) >> 8) as i32}
+        fn dx(&self) -> i32 {((self.val >> 16) & 0b0011) as i32 - 1}
+        fn dy(&self) -> i32 {(((self.val >> 16) & 0b1100) >> 2) as i32 - 1}
+
+        fn new(x: i32, y: i32, dx: i32, dy: i32) -> Cursor {
+            Cursor {
+                val: (((dy+1) as u32) << 18) | (((dx+1) as u32) << 16) | ((y as u32) << 8) | (x as u32)
+            }
+        }
+
         fn index(&self, w: usize) -> usize {
-            self.y as usize * (w+1) + self.x as usize
+            self.y() as usize * (w+1) + self.x() as usize
         }
 
         fn next(&self, w: usize, h: usize) -> Option<Cursor> {
-            let nx = self.x + self.dx;
-            let ny = self.y + self.dy;
+            let nx = self.x() + self.dx();
+            let ny = self.y() + self.dy();
 
             if nx < 0 || ny < 0 || nx >= w as i32 || ny >= h as i32 {
                 None
             } else {
-                Some(Cursor{x: nx, y: ny, dx: self.dx, dy: self.dy})
+                Some(Cursor::new(nx, ny, self.dx(), self.dy()))
             }
         }
 
-        fn split(&self) -> (Cursor, Cursor) {
-            (
-                Cursor{dx: self.dy, dy: -self.dx, ..*self},
-                Cursor{dx: -self.dy, dy: self.dx, ..*self},
-            )
+        fn left(&self) -> Cursor {
+            Cursor::new(self.x(), self.y(), self.dy(), -self.dx())
+        }
+
+        fn right(&self) -> Cursor {
+            Cursor::new(self.x(), self.y(), -self.dy(), self.dx())
         }
 
         fn direction(&self) -> u32 {
-            if self.dx != 0 { ((self.dx + 1)/2 + 1) as u32 }
-            else { ((self.dy + 3)*2) as u32 }
+            if self.dx() != 0 { ((self.dx() + 1)/2 + 1) as u32 }
+            else { ((self.dy() + 3)*2) as u32 }
         }
 
-        fn horizontal(&self) -> bool { self.dx != 0 }
+        fn horizontal(&self) -> bool { self.dx() != 0 }
     }
 
-    let mut visited = vec![0; (w+1)*h];
+    let count_visited = |start: Cursor| -> u32 {
 
-    let mut queue = vec![Cursor{x:0, y:0, dx:1, dy:0}];
+        let mut visited = vec![0; (w+1)*h];
 
-    while let Some(p) = queue.pop() {
-        let pind = p.index(w);
-        let pdir = p.direction();
+        let mut queue = Vec::with_capacity(64);
+        queue.push(start);
 
-        // if do_print {
-        //     println!("At: {:?}, c = {}, hor = {}, visited = {}, dir = {}", 
-        //              p, data[pind] as char, p.horizontal(), visited[pind], pdir);
-        // }
+        while let Some(p) = queue.pop() {
+            let pind = p.index(w);
+            let pdir = p.direction();
 
-        if visited[pind] & pdir > 0 {
-            // if do_print { println!(" > Already been here, ignoring"); }
-            continue;
-        }
+            // if do_print {
+            //     println!("At: {:?}, c = {}, hor = {}, visited = {}, dir = {}", 
+            //              p, data[pind] as char, p.horizontal(), visited[pind], pdir);
+            // }
 
-        visited[pind] |= pdir;
-
-        match (data[pind] as char, p.horizontal()) {
-            ('.', _) | ('|', false) | ('-', true) => {
-                if let Some(p_new) = p.next(w, h) {
-                    // if do_print {println!(" > Adding {:?} to queue", p_new)}
-                    queue.push(p_new);
-                }
-                // else if do_print {
-                //     println!(" > Supposed to go forward but out of map.");
-                // }
-            },
-            ('|', true) | ('-', false) => {
-                let (l,r) = p.split();
-
-                if let Some(l2) = l.next(w, h) {
-                    // if do_print {println!(" > Adding {:?} to queue", l2)}
-                    queue.push(l2);
-                }
-                // else if do_print {
-                //     println!(" > Supposed to split from {:?} but l was out of map.", p);
-                // }
-                
-                if let Some(r2) = r.next(w, h) {
-                    // if do_print {println!(" > Adding {:?} to queue", r2)}
-                    queue.push(r2);
-                }
-                // else if do_print {
-                //     println!(" > Supposed to split from {:?} but r was out of map.", p);
-                // }
+            if visited[pind] & pdir > 0 {
+                // if do_print { println!(" > Already been here, ignoring"); }
+                continue;
             }
-            ('\\', true) | ('/', false) => {
-                let (_,r) = p.split();
-                
-                if let Some(r2) = r.next(w, h) {
-                    // if do_print {println!(" > Adding {:?} to queue", r2)}
-                    queue.push(r2);
-                }
-                // else if do_print {
-                //     println!(" > Supposed to turn right from {:?} but it was out of map.", p);
-                // }
-            }
-            ('\\', false) | ('/', true) => {
-                let (l,_) = p.split();
 
-                if let Some(l2) = l.next(w, h) {
-                    // if do_print {println!(" > Adding {:?} to queue", l2)}
-                    queue.push(l2);
+            visited[pind] |= pdir;
+
+            match (data[pind] as char, p.horizontal()) {
+                ('.', _) | ('|', false) | ('-', true) => {
+                    if let Some(p_new) = p.next(w, h) {
+                        // if do_print {println!(" > Adding {:?} to queue", p_new)}
+                        queue.push(p_new);
+                    }
+                    // else if do_print {
+                    //     println!(" > Supposed to go forward but out of map.");
+                    // }
+                },
+                ('|', true) | ('-', false) => {
+                    if let Some(l2) = p.left().next(w, h) {
+                        // if do_print {println!(" > Adding {:?} to queue", l2)}
+                        queue.push(l2);
+                    }
+                    
+                    if let Some(r2) = p.right().next(w, h) {
+                        // if do_print {println!(" > Adding {:?} to queue", r2)}
+                        queue.push(r2);
+                    }
                 }
-                // else if do_print {
-                //     println!(" > Supposed to turn left from {:?} but it was out of map.", p);
-                // }
+                ('\\', true) | ('/', false) => {
+                    if let Some(r2) = p.right().next(w, h) {
+                        // if do_print {println!(" > Adding {:?} to queue", r2)}
+                        queue.push(r2);
+                    }
+                }
+                ('\\', false) | ('/', true) => {
+                    if let Some(l2) = p.left().next(w, h) {
+                        // if do_print {println!(" > Adding {:?} to queue", l2)}
+                        queue.push(l2);
+                    }
+                }
+                _ => ()
             }
-            _ => ()
+
+            // if do_print {
+            //     for i in 0..h {
+            //         for j in 0..w {
+            //             print!("{}", if visited[i*(w+1)+j] > 0 {'#'} else {'.'});
+            //         }
+            //         println!();
+            //     }
+            //     println!();
+            // }
         }
 
         // if do_print {
@@ -2239,30 +2244,36 @@ fn problem16ab(do_print: bool, folder: &str) {
         //     }
         //     println!();
         // }
-    }
 
-    // if do_print {
-    //     for i in 0..h {
-    //         for j in 0..w {
-    //             print!("{}", if visited[i*(w+1)+j] > 0 {'#'} else {'.'});
-    //         }
-    //         println!();
-    //     }
-    //     println!();
-    // }
+        let mut number_of_visited = 0;
 
-    let mut energized = 0;
-
-    for i in 0..h {
-        for j in 0..w {
-            if visited[i*(w+1)+j] > 0 {
-                energized += 1;
+        for i in 0..h {
+            for j in 0..w {
+                if visited[i*(w+1)+j] > 0 {
+                    number_of_visited += 1;
+                }
             }
         }
+
+        number_of_visited
+    };
+
+    let energized = count_visited(Cursor::new(0, 0, 1, 0));
+
+    let mut max_energized = 0;
+    for i in 0..w {
+        max_energized = max(max_energized,count_visited(Cursor::new(i as i32,0,0,1)));
+        max_energized = max(max_energized, count_visited(Cursor::new(i as i32,h as i32-1,0,-1)));
     }
+    for i in 0..h {
+        max_energized = max(max_energized,count_visited(Cursor::new(0, i as i32,1,0)));
+        max_energized = max(max_energized, count_visited(Cursor::new(w as i32-1, i as i32,-1,0)));
+    }
+
 
     if do_print {
         println!("Problem 16 A: {}", energized);
+        println!("Problem 16 B: {}", max_energized);
     }
 
 }
