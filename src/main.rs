@@ -2117,7 +2117,7 @@ fn problem16ab(do_print: bool, folder: &str) {
     //     println!("W={} H={}", w, h);
     // }
 
-    #[derive(Debug)]
+    #[derive(Eq, PartialEq, Hash, Clone)]
     struct Cursor {
         val: u32
     }
@@ -2136,6 +2136,15 @@ fn problem16ab(do_print: bool, folder: &str) {
 
         fn index(&self, w: usize) -> usize {
             self.y() as usize * (w+1) + self.x() as usize
+        }
+
+        fn exit_index(&self) -> usize {
+            let hor = self.horizontal();
+
+            // println!("me: {:?}, hor: {}, dir: {}, xy: {}", self, hor, (self.direction() as usize), ((if hor {self.x()} else {self.y()}) as usize));
+
+            (self.direction() as usize) |
+            (((if hor {self.y()} else {self.x()}) as usize) << 2)
         }
 
         fn next(&self, w: usize, h: usize) -> Option<Cursor> {
@@ -2158,14 +2167,40 @@ fn problem16ab(do_print: bool, folder: &str) {
         }
 
         fn direction(&self) -> u32 {
-            if self.dx() != 0 { ((self.dx() + 1)/2 + 1) as u32 }
-            else { ((self.dy() + 3)*2) as u32 }
+            if self.dx() != 0 { ((self.dx() + 1)/2) as u32 }
+            else { ((self.dy() + 1)/2 + 3) as u32 }
+        }
+
+        fn direction_bit(&self) -> u32 {
+            1 << self.direction()
         }
 
         fn horizontal(&self) -> bool { self.dx() != 0 }
+
+        fn back(&self) -> Cursor {
+            Cursor::new(self.x(), self.y(), -self.dx(), -self.dy())
+        }
     }
 
-    let count_visited = |start: Cursor| -> u32 {
+    impl Debug for Cursor {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("Cursor")
+            .field("x", &self.x())
+            .field("y", &self.y())
+            .field("dx", &self.dx())
+            .field("dy", &self.dy())
+            .finish()
+        }
+    }
+
+    let mut found_exit = vec![false; w*4+h*4];
+
+    let mut count_visited = |start: Cursor| -> u32 {
+
+        if found_exit[start.back().exit_index()] {
+            // if do_print {println!("Already found exit for {:?}: exit index is {}", start, start.back().exit_index())}
+            return 0;
+        }
 
         let mut visited = vec![0; (w+1)*h];
 
@@ -2174,7 +2209,7 @@ fn problem16ab(do_print: bool, folder: &str) {
 
         while let Some(p) = queue.pop() {
             let pind = p.index(w);
-            let pdir = p.direction();
+            let pdir = p.direction_bit();
 
             // if do_print {
             //     println!("At: {:?}, c = {}, hor = {}, visited = {}, dir = {}", 
@@ -2193,33 +2228,30 @@ fn problem16ab(do_print: bool, folder: &str) {
                     if let Some(p_new) = p.next(w, h) {
                         // if do_print {println!(" > Adding {:?} to queue", p_new)}
                         queue.push(p_new);
-                    }
-                    // else if do_print {
-                    //     println!(" > Supposed to go forward but out of map.");
-                    // }
+                    } else { found_exit[p.clone().exit_index()] = true; }
                 },
                 ('|', true) | ('-', false) => {
                     if let Some(l2) = p.left().next(w, h) {
                         // if do_print {println!(" > Adding {:?} to queue", l2)}
                         queue.push(l2);
-                    }
+                    } else { found_exit[p.left().exit_index()] = true; }
                     
                     if let Some(r2) = p.right().next(w, h) {
                         // if do_print {println!(" > Adding {:?} to queue", r2)}
                         queue.push(r2);
-                    }
+                    } else { found_exit[p.right().exit_index()] = true; }
                 }
                 ('\\', true) | ('/', false) => {
                     if let Some(r2) = p.right().next(w, h) {
                         // if do_print {println!(" > Adding {:?} to queue", r2)}
                         queue.push(r2);
-                    }
+                    } else { found_exit[p.right().exit_index()] = true; }
                 }
                 ('\\', false) | ('/', true) => {
                     if let Some(l2) = p.left().next(w, h) {
                         // if do_print {println!(" > Adding {:?} to queue", l2)}
                         queue.push(l2);
-                    }
+                    } else { found_exit[p.left().exit_index()] = true; }
                 }
                 _ => ()
             }
