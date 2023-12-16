@@ -2105,6 +2105,168 @@ fn problem15ab(do_print: bool, folder: &str) {
     }
 }
 
+fn problem16ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/16.in").unwrap();
+
+    let mut w = 0;
+    while data[w] as char != '\n' {w += 1;}
+    let w = w;
+    let h = data.len() / (w+1);
+
+    // if do_print {
+    //     println!("W={} H={}", w, h);
+    // }
+
+    #[derive(Debug)]
+    struct Cursor {
+        x: i32,
+        y: i32,
+        dx: i32,
+        dy: i32
+    }
+
+    impl Cursor {
+        fn index(&self, w: usize) -> usize {
+            self.y as usize * (w+1) + self.x as usize
+        }
+
+        fn next(&self, w: usize, h: usize) -> Option<Cursor> {
+            let nx = self.x + self.dx;
+            let ny = self.y + self.dy;
+
+            if nx < 0 || ny < 0 || nx >= w as i32 || ny >= h as i32 {
+                None
+            } else {
+                Some(Cursor{x: nx, y: ny, dx: self.dx, dy: self.dy})
+            }
+        }
+
+        fn split(&self) -> (Cursor, Cursor) {
+            (
+                Cursor{dx: self.dy, dy: -self.dx, ..*self},
+                Cursor{dx: -self.dy, dy: self.dx, ..*self},
+            )
+        }
+
+        fn direction(&self) -> u32 {
+            if self.dx != 0 { ((self.dx + 1)/2 + 1) as u32 }
+            else { ((self.dy + 3)*2) as u32 }
+        }
+
+        fn horizontal(&self) -> bool { self.dx != 0 }
+    }
+
+    let mut visited = vec![0; (w+1)*h];
+
+    let mut queue = vec![Cursor{x:0, y:0, dx:1, dy:0}];
+
+    while let Some(p) = queue.pop() {
+        let pind = p.index(w);
+        let pdir = p.direction();
+
+        // if do_print {
+        //     println!("At: {:?}, c = {}, hor = {}, visited = {}, dir = {}", 
+        //              p, data[pind] as char, p.horizontal(), visited[pind], pdir);
+        // }
+
+        if visited[pind] & pdir > 0 {
+            // if do_print { println!(" > Already been here, ignoring"); }
+            continue;
+        }
+
+        visited[pind] |= pdir;
+
+        match (data[pind] as char, p.horizontal()) {
+            ('.', _) | ('|', false) | ('-', true) => {
+                if let Some(p_new) = p.next(w, h) {
+                    // if do_print {println!(" > Adding {:?} to queue", p_new)}
+                    queue.push(p_new);
+                }
+                // else if do_print {
+                //     println!(" > Supposed to go forward but out of map.");
+                // }
+            },
+            ('|', true) | ('-', false) => {
+                let (l,r) = p.split();
+
+                if let Some(l2) = l.next(w, h) {
+                    // if do_print {println!(" > Adding {:?} to queue", l2)}
+                    queue.push(l2);
+                }
+                // else if do_print {
+                //     println!(" > Supposed to split from {:?} but l was out of map.", p);
+                // }
+                
+                if let Some(r2) = r.next(w, h) {
+                    // if do_print {println!(" > Adding {:?} to queue", r2)}
+                    queue.push(r2);
+                }
+                // else if do_print {
+                //     println!(" > Supposed to split from {:?} but r was out of map.", p);
+                // }
+            }
+            ('\\', true) | ('/', false) => {
+                let (_,r) = p.split();
+                
+                if let Some(r2) = r.next(w, h) {
+                    // if do_print {println!(" > Adding {:?} to queue", r2)}
+                    queue.push(r2);
+                }
+                // else if do_print {
+                //     println!(" > Supposed to turn right from {:?} but it was out of map.", p);
+                // }
+            }
+            ('\\', false) | ('/', true) => {
+                let (l,_) = p.split();
+
+                if let Some(l2) = l.next(w, h) {
+                    // if do_print {println!(" > Adding {:?} to queue", l2)}
+                    queue.push(l2);
+                }
+                // else if do_print {
+                //     println!(" > Supposed to turn left from {:?} but it was out of map.", p);
+                // }
+            }
+            _ => ()
+        }
+
+        // if do_print {
+        //     for i in 0..h {
+        //         for j in 0..w {
+        //             print!("{}", if visited[i*(w+1)+j] > 0 {'#'} else {'.'});
+        //         }
+        //         println!();
+        //     }
+        //     println!();
+        // }
+    }
+
+    // if do_print {
+    //     for i in 0..h {
+    //         for j in 0..w {
+    //             print!("{}", if visited[i*(w+1)+j] > 0 {'#'} else {'.'});
+    //         }
+    //         println!();
+    //     }
+    //     println!();
+    // }
+
+    let mut energized = 0;
+
+    for i in 0..h {
+        for j in 0..w {
+            if visited[i*(w+1)+j] > 0 {
+                energized += 1;
+            }
+        }
+    }
+
+    if do_print {
+        println!("Problem 16 A: {}", energized);
+    }
+
+}
+
 fn main() {
     let problems = [
         // problem1ab,
@@ -2122,7 +2284,8 @@ fn main() {
         // problem12ab,
         // problem13ab,
         // problem14ab,
-        problem15ab,
+        // problem15ab,
+        problem16ab,
     ];
     let folder = "input";
 
