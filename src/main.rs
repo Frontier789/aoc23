@@ -1979,10 +1979,10 @@ fn problem14ab(do_print: bool, folder: &str) {
     const N: usize = 1000000000;
     let n = (N - i/2) % period + i/2;
     
-    if do_print {
-        println!("Found a loop: {} -> {}. N maps to {}", i, i/2, n);
-        // println!("values: {:?}", values);
-    }
+    // if do_print {
+    //     println!("Found a loop: {} -> {}. N maps to {}", i, i/2, n);
+    //     // println!("values: {:?}", values);
+    // }
 
     let score_b = values[n];
 
@@ -2441,23 +2441,23 @@ fn problem17ab(do_print: bool, folder: &str) {
 
 fn main() {
     let problems = [
-        // problem1ab,
-        // problem2ab,
-        // problem3ab,
-        // problem4ab,
-        // problem5a,
-        // problem5b,
-        // problem6ab,
-        // problem7ab,
-        // problem8ab,
-        // problem9ab,
-        // problem10ab,
-        // problem11ab,
-        // problem12ab,
-        // problem13ab,
-        // problem14ab,
-        // problem15ab,
-        // problem16ab,
+        problem1ab,
+        problem2ab,
+        problem3ab,
+        problem4ab,
+        problem5a,
+        problem5b,
+        problem6ab,
+        problem7ab,
+        problem8ab,
+        problem9ab,
+        problem10ab,
+        problem11ab,
+        problem12ab,
+        problem13ab,
+        problem14ab,
+        problem15ab,
+        problem16ab,
         problem17ab,
     ];
     let folder = "input";
