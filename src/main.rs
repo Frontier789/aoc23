@@ -2,6 +2,7 @@
 
 use core::fmt::{Debug, Display};
 use std::cmp::{max, min};
+use std::collections::BinaryHeap;
 use std::time::Duration;
 
 fn problem1ab(do_print: bool, folder: &str) {
@@ -2310,6 +2311,134 @@ fn problem16ab(do_print: bool, folder: &str) {
 
 }
 
+fn problem17ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/17.in").unwrap();
+
+    let mut w = 0;
+    while data[w] as char != '\n' {w += 1;}
+    let w = w;
+    let h = data.len() / (w+1);
+
+    #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+    struct State {
+        heat_loss: i32,
+        x: i32,
+        y: i32,
+        next_step_hor: bool,
+    }
+
+    impl State {
+        fn map_index(&self, w: usize) -> usize {
+            self.y as usize * (w+1) + self.x as usize
+        }
+        fn visited_index(&self, w: usize) -> usize {
+            self.map_index(w) * 2 + self.next_step_hor as usize
+        }
+    }
+
+    let find_minimum_loss = |min_step: i32, max_step: i32| {
+        let mut mlosses = vec![-1000000000; (w+1)*h*2];
+
+        let mut pq = BinaryHeap::new();
+        pq.push(State { heat_loss: 0, x: 0, y: 0, next_step_hor: true});
+        pq.push(State { heat_loss: 0, x: 0, y: 0, next_step_hor: false});
+
+        mlosses[State { heat_loss: 0, x: 0, y: 0, next_step_hor: true}.visited_index(w)] = 0;
+        mlosses[State { heat_loss: 0, x: 0, y: 0, next_step_hor: false}.visited_index(w)] = 0;
+
+        let mut minimum_loss = -1000000000;
+
+        while let Some(s) = pq.pop() {
+            if s.x as usize == w-1 && s.y as usize == h-1 {
+                minimum_loss = s.heat_loss;
+                break;
+            }
+
+            // if do_print {
+            //     println!("Discovered minimum heat loss to {},{},{}. It is: {}", s.x, s.y, if s.next_step_hor {'H'} else {'V'}, s.heat_loss);
+            // }
+            // if do_print {
+            //     for i in 0..h {
+            //         for j in 0..w {
+            //             let v = max(mlosses[(i*(w+1) + j)*2+0], mlosses[(i*(w+1) + j)*2+1]);
+            //             if v == -1000000000 {print!(" [] ");} else {print!("{:>3} ", -v);}
+            //         }
+            //         println!();
+            //     }
+            //     println!();
+            // }
+
+            if s.next_step_hor {
+                let mut s2 = s.clone();
+                s2.next_step_hor = false;
+
+                while s.x+max_step > s2.x && s2.x+1 < w as i32 {
+                    s2.x += 1;
+                    s2.heat_loss -= data[s2.map_index(w)] as i32 - '0' as i32;
+                    if s2.x - s.x >= min_step {
+                        if mlosses[s2.visited_index(w)] < s2.heat_loss {
+                            mlosses[s2.visited_index(w)] = s2.heat_loss;
+                            pq.push(s2);
+                        }
+                    }
+                }
+
+                s2.x = s.x;
+                s2.heat_loss = s.heat_loss;
+
+                while s.x < s2.x+max_step && s2.x > 0 {
+                    s2.x -= 1;
+                    s2.heat_loss -= data[s2.map_index(w)] as i32 - '0' as i32;
+                    if s.x - s2.x >= min_step {
+                        if mlosses[s2.visited_index(w)] < s2.heat_loss {
+                            mlosses[s2.visited_index(w)] = s2.heat_loss;
+                            pq.push(s2);
+                        }
+                    }
+                }
+            } else {
+                let mut s2 = s.clone();
+                s2.next_step_hor = true;
+
+                while s.y+max_step > s2.y && s2.y+1 < h as i32 {
+                    s2.y += 1;
+                    s2.heat_loss -= data[s2.map_index(w)] as i32 - '0' as i32;
+                    if s2.y - s.y >= min_step {
+                        if mlosses[s2.visited_index(w)] < s2.heat_loss {
+                            mlosses[s2.visited_index(w)] = s2.heat_loss;
+                            pq.push(s2);
+                        }
+                    }
+                }
+
+                s2.y = s.y;
+                s2.heat_loss = s.heat_loss;
+
+                while s.y <= s2.y+max_step && s2.y > 0 {
+                    s2.y -= 1;
+                    s2.heat_loss -= data[s2.map_index(w)] as i32 - '0' as i32;
+                    if s.y - s2.y >= min_step {
+                        if mlosses[s2.visited_index(w)] < s2.heat_loss {
+                            mlosses[s2.visited_index(w)] = s2.heat_loss;
+                            pq.push(s2);
+                        }
+                    }
+                }
+            }
+        }
+        -minimum_loss
+    };
+
+    let answer_b = find_minimum_loss(4, 10);
+    let answer_a = find_minimum_loss(1, 3);
+
+    if do_print {
+        println!("Problem 17 A: {}", answer_a);
+        println!("Problem 17 B: {}", answer_b);
+    }
+
+}
+
 fn main() {
     let problems = [
         // problem1ab,
@@ -2328,11 +2457,12 @@ fn main() {
         // problem13ab,
         // problem14ab,
         // problem15ab,
-        problem16ab,
+        // problem16ab,
+        problem17ab,
     ];
     let folder = "input";
 
-    let number_of_runs = 100;
+    let number_of_runs = 10;
     println!(
         "Running solutions {} times, to collect timing",
         number_of_runs
