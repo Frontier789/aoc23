@@ -1990,15 +1990,11 @@ fn problem14ab(do_print: bool, folder: &str) {
         println!()
     };
 
-    let evaluate = |occupied: &Vec<bool>| {
+    let evaluate = |stones: &Vec<Stone>| {
         let mut total_score = 0;
 
-        for j in 0..h {
-            for i in 0..w {
-                if occupied[j*w + i] {
-                    total_score += h-j;
-                }
-            }
+        for Stone{ x:_, y } in stones.iter() {
+            total_score += h - *y as usize;
         }
 
         total_score
@@ -2033,7 +2029,7 @@ fn problem14ab(do_print: bool, folder: &str) {
     let mut occupied_a = is_occupied.clone();
     let mut stones_a = stones.clone();
     roll_up(&mut stones_a, &mut occupied_a);
-    let score_a = evaluate(&occupied_a);
+    let score_a = evaluate(&stones_a);
 
     // if do_print {
     //     println!("Rolled up 1x score={}", score_a);
@@ -2051,7 +2047,7 @@ fn problem14ab(do_print: bool, folder: &str) {
     };
 
     loop {
-        let val = evaluate(&is_occupied);
+        let val = evaluate(&stones);
         values.push(val);
         // if do_print && i < 4 {
         //     println!("It {} val={}",i,val);
