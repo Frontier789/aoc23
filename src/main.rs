@@ -1839,12 +1839,163 @@ fn problem14ab(do_print: bool, folder: &str) {
     //     println!("W={}, H={}",w,h);
     // }
 
-    let evaluate_field = |field: &Vec<u8>| {
+    let mut distance_left = vec![0u32; w*h];
+    let mut distance_right = vec![0u32; w*h];
+    let mut distance_up = vec![0u32; w*h];
+    let mut distance_down = vec![0u32; w*h];
+
+    for i in 0..h {
+        let mut prev = '#';
+        for j in 0..w {
+            let c = data[i*(w+1) + j] as char;
+            if prev != '#' && c != '#' {
+                distance_left[i*w + j] = distance_left[i*w + j - 1] + 1;
+            }
+            prev = c;
+        }
+    }
+
+    for i in 0..h {
+        let mut prev = '#';
+        for j in (0..w).rev() {
+            let c = data[i*(w+1) + j] as char;
+            if prev != '#' && c != '#' {
+                distance_right[i*w + j] = distance_right[i*w + j + 1] + 1;
+            }
+            prev = c;
+        }
+    }
+
+    for j in 0..w {
+        let mut prev = '#';
+        for i in 0..h {
+            let c = data[i*(w+1) + j] as char;
+            if prev != '#' && c != '#' {
+                distance_up[i*w + j] = distance_up[(i-1)*w + j] + 1;
+            }
+            prev = c;
+        }
+    }
+
+    for j in 0..w {
+        let mut prev = '#';
+        for i in (0..h).rev() {
+            let c = data[i*(w+1) + j] as char;
+            if prev != '#' && c != '#' {
+                distance_down[i*w + j] = distance_down[(i+1)*w + j] + 1;
+            }
+            prev = c;
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    struct Stone {
+        x: u32,
+        y: u32,
+    }
+
+    impl Stone {
+        fn index(&self, w: usize) -> usize {
+            self.y as usize * w + self.x as usize
+        }
+    }
+
+    let mut stones = vec![];
+
+    for i in 0..h {
+        for j in 0..w {
+            let c = data[i*(w+1) + j] as char;
+            if c == 'O' {
+                stones.push(Stone{x:j as u32, y:i as u32});
+            }
+        }
+    }
+
+    // if do_print {
+    //     for (name, arr) in [("Left", &distance_left),
+    //                                              ("Right", &distance_right),
+    //                                              ("Up", &distance_up),
+    //                                              ("Down", &distance_down)] {
+    //         println!("Distance {}:", name);
+    //         for i in 0..h {
+    //             for j in 0..w {
+    //                 print!(" {:>2}", arr[i*w + j]);
+    //             }
+    //             println!()
+    //         }
+    //         println!()
+    //     }
+
+    //     println!("Stones: {:?}", stones);
+    // }
+
+    let roll_up = |stones: &mut Vec<Stone>, occupied: &mut Vec<bool>| {
+        for o in stones.iter_mut() {
+            let steps = distance_up[o.index(w)];
+            occupied[o.index(w)] = false;
+            
+            o.y -= steps;
+
+            while occupied[o.index(w)] { o.y += 1; }
+            occupied[o.index(w)] = true;
+        }
+    };
+
+    let roll_down = |stones: &mut Vec<Stone>, occupied: &mut Vec<bool>| {
+        for o in stones.iter_mut() {
+            let steps = distance_down[o.index(w)];
+            occupied[o.index(w)] = false;
+            
+            o.y += steps;
+
+            while occupied[o.index(w)] { o.y -= 1; }
+            occupied[o.index(w)] = true;
+        }
+    };
+
+    let roll_left = |stones: &mut Vec<Stone>, occupied: &mut Vec<bool>| {
+        for o in stones.iter_mut() {
+            let steps = distance_left[o.index(w)];
+            occupied[o.index(w)] = false;
+            
+            o.x -= steps;
+
+            while occupied[o.index(w)] { o.x += 1; }
+            occupied[o.index(w)] = true;
+        }
+    };
+
+    let roll_right = |stones: &mut Vec<Stone>, occupied: &mut Vec<bool>| {
+        for o in stones.iter_mut() {
+            let steps = distance_right[o.index(w)];
+            occupied[o.index(w)] = false;
+            
+            o.x += steps;
+
+            while occupied[o.index(w)] { o.x -= 1; }
+            occupied[o.index(w)] = true;
+        }
+    };
+
+    #[allow(unused)]
+    let print_map = |occupied: &Vec<bool>| {
+        for i in 0..h {
+            for j in 0..w {
+                let c = if occupied[i*w+j] {'O'} else
+                              if data[i*(w+1)+j] as char == '#' {'#'} else {'.'};
+                print!("{}",c);
+            }
+            println!()
+        }
+        println!()
+    };
+
+    let evaluate = |occupied: &Vec<bool>| {
         let mut total_score = 0;
 
         for j in 0..h {
             for i in 0..w {
-                if field[j*(w+1) + i] as char == 'O' {
+                if occupied[j*w + i] {
                     total_score += h-j;
                 }
             }
@@ -1853,111 +2004,54 @@ fn problem14ab(do_print: bool, folder: &str) {
         total_score
     };
 
-    #[allow(unused_variables)]
-    let print_field = |field: &Vec<u8>| {
-        for i in 0..h {
-            println!("{}", field[i*(w+1)..(i+1)*(w+1)-1].iter().map(|b|*b as char).collect::<String>());
+    let mut is_occupied = vec![false; w*h];
+    for i in 0..h {
+        for j in 0..w {
+            let c = data[i*(w+1) + j] as char;
+            is_occupied[i*w + j] = c == 'O';
         }
-    };
+    }
 
-    let step_north = |field: &mut Vec<u8>| {
-        for i in 0..w {
-            let mut dotj = 0;
-            for j in 0..h {
-                match field[j*(w+1)+i] as char {
-                    'O' => {
-                        if j > dotj {
-                            field[dotj*(w+1)+i] = 'O' as u8;
-                            field[j*(w+1)+i] = '.' as u8;
-                        }
-                        dotj += 1;
-                    },
-                    '#' => {dotj = j+1;},
-                    _ => (),
-                }
-            }
-        }
-    };
-
-    let step_south = |field: &mut Vec<u8>| {
-        for i in 0..w {
-            let mut dotj = h-1;
-            for j in (0..h).rev() {
-                match field[j*(w+1)+i] as char {
-                    'O' => {
-                        if j < dotj {
-                            field[dotj*(w+1)+i] = 'O' as u8;
-                            field[j*(w+1)+i] = '.' as u8;
-                        }
-                        dotj -= 1;
-                    },
-                    '#' => {dotj = j-1;},
-                    _ => (),
-                }
-            }
-        }
-    };
-
-    let step_west = |field: &mut Vec<u8>| {
-        for j in 0..h {
-            let mut doti = 0;
-            for i in 0..w {
-                match field[j*(w+1)+i] as char {
-                    'O' => {
-                        if i > doti {
-                            field[j*(w+1)+doti] = 'O' as u8;
-                            field[j*(w+1)+i] = '.' as u8;
-                        }
-                        doti += 1;
-                    },
-                    '#' => {doti = i+1;},
-                    _ => (),
-                }
-            }
-        }
-    };
-
-    let step_east = |field: &mut Vec<u8>| {
-        for j in 0..h {
-            let mut doti = w-1;
-            for i in (0..w).rev() {
-                match field[j*(w+1)+i] as char {
-                    'O' => {
-                        if i < doti {
-                            field[j*(w+1)+doti] = 'O' as u8;
-                            field[j*(w+1)+i] = '.' as u8;
-                        }
-                        doti -= 1;
-                    },
-                    '#' => {doti = i-1;},
-                    _ => (),
-                }
-            }
-        }
-    };
-
-    let step = |mut field: &mut Vec<u8>| {
-        step_north(&mut field);
-        step_west(&mut field);
-        step_south(&mut field);
-        step_east(&mut field);
-    };
-    
-    let mut field_a = data.clone();
-    step_north(&mut field_a);
-    let score_a = evaluate_field(&field_a);
     // if do_print {
-    //     println!("Northed field score={}", score_a);
-    //     print_field(&field_a);
+    //     for _ in 0..3 {
+    //         roll_up(&mut stones, &mut is_occupied);
+    //         roll_left(&mut stones, &mut is_occupied);
+    //         roll_down(&mut stones, &mut is_occupied);
+    //         roll_right(&mut stones, &mut is_occupied);
+    //         print_map(&is_occupied);
+    //     }
+    //     roll_up(&mut stones, &mut is_occupied);
+    //     print_map(&is_occupied);
+    //     roll_left(&mut stones, &mut is_occupied);
+    //     print_map(&is_occupied);
+    //     roll_down(&mut stones, &mut is_occupied);
+    //     print_map(&is_occupied);
+    //     roll_right(&mut stones, &mut is_occupied);
+    //     print_map(&is_occupied);
     // }
 
-    let mut field = data.clone();
+    let mut occupied_a = is_occupied.clone();
+    let mut stones_a = stones.clone();
+    roll_up(&mut stones_a, &mut occupied_a);
+    let score_a = evaluate(&occupied_a);
+
+    // if do_print {
+    //     println!("Rolled up 1x score={}", score_a);
+    //     print_map(&occupied_a);
+    // }
 
     let mut values = Vec::new();
     let mut i = 0;
 
+    let step = |stones: &mut Vec<Stone>, occupied: &mut Vec<bool>| {
+        roll_up(stones, occupied);
+        roll_left(stones, occupied);
+        roll_down(stones, occupied);
+        roll_right(stones, occupied);
+    };
+
     loop {
-        let val = evaluate_field(&field);
+        let val = evaluate(&is_occupied);
         values.push(val);
         // if do_print && i < 4 {
         //     println!("It {} val={}",i,val);
@@ -1971,7 +2065,7 @@ fn problem14ab(do_print: bool, folder: &str) {
                  && values[values.len()-1-4] == values[i/2-4] {
             break;
         }
-        step(&mut field);
+        step(&mut stones, &mut is_occupied);
         i += 1;
     };
 
@@ -1990,6 +2084,7 @@ fn problem14ab(do_print: bool, folder: &str) {
         println!("Problem 14 A: {}", score_a);
         println!("Problem 14 B: {}", score_b);
     }
+
 }
 
 fn problem15ab(do_print: bool, folder: &str) {
@@ -2439,7 +2534,6 @@ fn problem17ab(do_print: bool, folder: &str) {
 
 }
 
-
 fn problem18ab(do_print: bool, folder: &str) {
     let data = std::fs::read(folder.to_owned() + "/18.in").unwrap();
 
@@ -2597,15 +2691,15 @@ fn main() {
         // problem11ab,
         // problem12ab,
         // problem13ab,
-        // problem14ab,
+        problem14ab,
         // problem15ab,
         // problem16ab,
         // problem17ab,
-        problem18ab,
+        // problem18ab,
     ];
     let folder = "input";
 
-    let number_of_runs = 1000;
+    let number_of_runs = 100;
     println!(
         "Running solutions {} times, to collect timing",
         number_of_runs
