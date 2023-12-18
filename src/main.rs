@@ -2439,30 +2439,173 @@ fn problem17ab(do_print: bool, folder: &str) {
 
 }
 
+
+fn problem18ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/18.in").unwrap();
+
+    let mut i = 0;
+
+    struct AreaTracker {
+        x: i64,
+        y: i64,
+        area: i64,
+        first_dir: char,
+        last_dir: char,
+        outer_corners: i64,
+        inner_corners: i64,
+        edges: i64,
+    }
+
+    impl AreaTracker {
+        fn new() -> AreaTracker {
+            AreaTracker {
+                x: 0,
+                y: 0,
+                area: 0,
+                first_dir: 'S',
+                last_dir: 'S',
+                outer_corners: 0,
+                inner_corners: 0,
+                edges: 0,
+            }
+        }
+
+        fn note_corner(&mut self, last_dir: char, direction: char) {
+            match (last_dir, direction) {
+                ('R', 'U') | ('U', 'L') | ('L', 'D') | ('D', 'R') => {
+                    self.outer_corners += 1;
+                }
+                ('U', 'R') | ('R', 'D') | ('D', 'L') | ('L', 'U') => {
+                    self.inner_corners += 1;
+                }
+                _ => ()
+            };
+        }
+        
+        fn process_step(&mut self, direction: char, num: i64)
+        {
+            self.note_corner(self.last_dir, direction);
+            self.last_dir = direction;
+
+            if self.first_dir == 'S' {
+                self.first_dir = direction;
+            }
+
+            self.edges += num + 1;
+
+            match direction {
+                'U' => {
+                    self.y += num;
+                }
+                'D' => {
+                    self.y -= num;
+                }
+                'L' => {
+                    self.x -= num;
+                    self.area -= self.y*num;
+                },
+                'R' => {
+                    self.x += num;
+                    self.area += self.y*num;
+                },
+                // _ => panic!("Unexpected direction: {}", direction),
+                _ => ()
+            };
+        }
+
+        fn close_loop(&mut self) {
+            self.note_corner(self.last_dir, self.first_dir);
+            
+            if self.inner_corners > self.outer_corners {
+                std::mem::swap(&mut self.inner_corners, &mut self.outer_corners);
+            }
+        }
+
+        fn calc_area(&self) -> i64 {
+            (self.area*4 + self.edges*2 - self.inner_corners * 3 - self.outer_corners) / 4
+        }
+    }
+
+    let mut tracker_a = AreaTracker::new();
+    let mut tracker_b = AreaTracker::new();
+
+    while i < data.len() {
+        let direction = data[i] as char;
+
+        // assume at most 2 digit numbers
+        let mut num = data[i+2] as i32 - '0' as i32;
+        if data[i+3] as char != ' ' {
+            num = num * 10 + data[i+3] as i32 - '0' as i32;
+            i += 1;
+        }
+        i += 6; // D N (#
+        
+        let mut num_b = 0;
+        for _ in 0..5 {
+            num_b = (num_b << 4) + data[i] as i32;
+            
+            if data[i] as char > '9' {
+                num_b -= 'a' as i32 - 10;
+            } else {
+                num_b -= '0' as i32;
+            }
+            i += 1;
+        }
+
+        let direction_b = match data[i] as char {
+            '0' => 'R',
+            '1' => 'D',
+            '2' => 'L',
+            '3' => 'U',
+            _ => '_',
+        };
+        i += 3;
+
+        // if do_print {
+        //     println!("Dir: {}, amount: {}", direction, num);
+        //     println!("Dir_b: {}, amount_b: {}", direction_b, num_b);
+        // }
+
+        tracker_a.process_step(direction, num as i64);
+        tracker_b.process_step(direction_b, num_b as i64);
+    }
+    tracker_a.close_loop();
+    tracker_b.close_loop();
+
+    let area_a = tracker_a.calc_area();
+    let area_b = tracker_b.calc_area();
+
+    if do_print {
+        println!("Problem 18 A: {}", area_a);
+        println!("Problem 18 B: {}", area_b);
+    }
+}
+
 fn main() {
     let problems = [
-        problem1ab,
-        problem2ab,
-        problem3ab,
-        problem4ab,
-        problem5a,
-        problem5b,
-        problem6ab,
-        problem7ab,
-        problem8ab,
-        problem9ab,
-        problem10ab,
-        problem11ab,
-        problem12ab,
-        problem13ab,
-        problem14ab,
-        problem15ab,
-        problem16ab,
-        problem17ab,
+        // problem1ab,
+        // problem2ab,
+        // problem3ab,
+        // problem4ab,
+        // problem5a,
+        // problem5b,
+        // problem6ab,
+        // problem7ab,
+        // problem8ab,
+        // problem9ab,
+        // problem10ab,
+        // problem11ab,
+        // problem12ab,
+        // problem13ab,
+        // problem14ab,
+        // problem15ab,
+        // problem16ab,
+        // problem17ab,
+        problem18ab,
     ];
     let folder = "input";
 
-    let number_of_runs = 10;
+    let number_of_runs = 1000;
     println!(
         "Running solutions {} times, to collect timing",
         number_of_runs
