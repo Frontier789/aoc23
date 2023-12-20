@@ -2,7 +2,7 @@
 
 use core::fmt::{Debug, Display};
 use std::cmp::{max, min};
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::{BinaryHeap, HashMap, VecDeque};
 use std::time::Duration;
 
 fn problem1ab(do_print: bool, folder: &str) {
@@ -2892,31 +2892,207 @@ fn problem19ab(do_print: bool, folder: &str) {
         println!("Problem 19 A: {}", sum);
         println!("Problem 19 B: {}", accepted_volume);
     }
+}
 
+
+fn problem20ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/20.in").unwrap();
+
+    #[derive(Copy, Clone, Debug)]
+    #[repr(i32)]
+    enum Type {
+        FlipFlop(u8),
+        Conjunction(u8),
+    }
+
+    const INFINITE: u32 = 0xFFFFFFFF;
+
+    let get_id = |name: usize, name_to_id: &mut Vec<u32>, next_id: &mut u32| {
+        if name_to_id[name] == INFINITE {
+            name_to_id[name] = *next_id;
+            *next_id += 1;
+        }
+
+        name_to_id[name]
+    };
+
+    let get_name = |i: usize| {
+        (data[i] as usize - 'a' as usize) * 26 + (data[i+1] as usize - 'a' as usize)
+    };
+
+    let read_out_edges = |i: &mut usize, name_to_id: &mut Vec<u32>, next_id: &mut u32, in_edges: &mut Vec<i32>| -> Vec<u32> {
+        let mut edges = Vec::new();
+
+        while data[*i] as char != '\n' {
+            *i += 2;
+            let name = get_name(*i);
+            let id = get_id(name, name_to_id, next_id);
+
+            edges.push(id);
+            in_edges[id as usize] += 1;
+            *i += 2;
+        }
+
+        edges
+    };
+
+    let mut next_id = 0;
+    let mut name_to_id = vec![INFINITE; 26*26];
+    let mut broadcasted = Vec::new();
+    let mut out_edges = vec![Vec::new(); 26*26];
+    let mut node_types = vec![Type::FlipFlop(0); 26*26];
+    let mut in_edges = vec![0; 26*26];
+
+    let mut i = 0;
+    while i < data.len() {
+        let c = data[i] as char;
+        if c == 'b' {
+            i += 13;
+            broadcasted = read_out_edges(&mut i, &mut name_to_id, &mut next_id, &mut in_edges);
+        }
+        if c == '%' || c == '&' {
+            let id = get_id(get_name(i+1), &mut name_to_id, &mut next_id);
+            if c == '&' {
+                node_types[id as usize] = Type::Conjunction(0);
+            }
+            i += 5;
+            out_edges[id as usize] = read_out_edges(&mut i, &mut name_to_id, &mut next_id, &mut in_edges);
+        }
+        i += 1;
+    }
+
+    let node_count = next_id as usize;
+
+    for i in 0..node_count {
+        if let Type::Conjunction(n) = &mut node_types[i] {
+            *n = in_edges[i] as u8;
+        }
+    }
+
+    // if do_print {
+    //     for i in 0..node_count {
+    //         print!("{} -> ", i);
+    //         for k in out_edges[i].iter() {
+    //             print!("{}, ", k);
+    //         }
+    //         println!();
+    //     }
+    //     print!("Broadcast: ");
+    //     for k in broadcasted.iter() {
+    //         print!("{}, ", k);
+    //     }
+    //     println!();
+    //     println!("In edges: {:?}", &in_edges[..node_count]);
+    //     println!("Node types: {:?}", &node_types[..node_count]);
+    // }
+
+    const LOW_SIGNAL: bool = true;
+    const HIGH_SIGNAL: bool = false;
+    
+    let mut last_input = vec![LOW_SIGNAL; (node_count+1)*node_count];
+
+    // let rx = name_to_id[('r' as usize - 'a' as usize)*26 + 'x' as usize - 'a' as usize] as usize;
+    // if do_print {
+    //     println!("Id of rx = {}", rx);
+    // }
+
+    let mut press = |sent_low: &mut u32, sent_high: &mut u32| {
+        *sent_low += 1;
+
+        let mut q = VecDeque::new();
+        for b in broadcasted.iter() {
+            q.push_back((node_count, *b | 0x10000));
+        }
+
+        while let Some((from, id)) = q.pop_front() {
+            let signal_type = id & 0x10000 > 0;
+            let id = (id & 0x0FFFF) as usize;
+
+            if signal_type {
+                *sent_low += 1;
+            } else {
+                *sent_high += 1;
+            }
+
+            // if do_print {
+            //     println!("Processing a {} signal between {} -> {}", if signal_type {"LOW"} else {"HIGH"}, from, id);
+            // }
+
+            let (signal, new_type) = match (signal_type, node_types[id]) {
+                (LOW_SIGNAL, Type::FlipFlop(0)) => (Some(HIGH_SIGNAL), Type::FlipFlop(1)),
+                (LOW_SIGNAL, Type::FlipFlop(1)) => (Some(LOW_SIGNAL), Type::FlipFlop(0)),
+                (s, Type::Conjunction(mut n)) => {
+                    let li = &mut last_input[id*(node_count+1) + from];
+                    if *li != s {
+                        if s == HIGH_SIGNAL {
+                            n -= 1;
+                        } else {
+                            n += 1;
+                        }
+                    }
+                    *li = s;
+
+                    (Some(n == 0), Type::Conjunction(n))
+                }
+                (_, t) => (None, t),
+            };
+
+            // if do_print {
+            //     print!(" -> Node became {:?}", new_type);
+            //     if let Some(true) = signal {
+            //         print!(" and sent LOW signal");
+            //     }
+            //     if let Some(false) = signal {
+            //         print!(" and sent HIGH signal");
+            //     }
+            //     println!();
+            //     println!();
+            // }
+
+            node_types[id as usize] = new_type;
+            if let Some(new_signal) = signal {
+                for to in out_edges[id as usize].iter() {
+                    q.push_back((id, *to as u32 | if new_signal {0x10000} else {0}));
+                }
+            }
+        }
+    };
+        
+    let mut sent_high = 0;
+    let mut sent_low  = 0;
+
+    for _ in 0..1000 {
+        press(&mut sent_low, &mut sent_high);
+    }
+    
+    if do_print {
+        println!("Problem 20 A: {}", sent_low * sent_high);
+    }
 }
 
 fn main() {
     let problems = [
-        problem1ab,
-        problem2ab,
-        problem3ab,
-        problem4ab,
-        problem5a,
-        problem5b,
-        problem6ab,
-        problem7ab,
-        problem8ab,
-        problem9ab,
-        problem10ab,
-        problem11ab,
-        problem12ab,
-        problem13ab,
-        problem14ab,
-        problem15ab,
-        problem16ab,
-        problem17ab,
-        problem18ab,
-        problem19ab,
+        // problem1ab,
+        // problem2ab,
+        // problem3ab,
+        // problem4ab,
+        // problem5a,
+        // problem5b,
+        // problem6ab,
+        // problem7ab,
+        // problem8ab,
+        // problem9ab,
+        // problem10ab,
+        // problem11ab,
+        // problem12ab,
+        // problem13ab,
+        // problem14ab,
+        // problem15ab,
+        // problem16ab,
+        // problem17ab,
+        // problem18ab,
+        // problem19ab,
+        problem20ab,
     ];
     let folder = "input";
 
