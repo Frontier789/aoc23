@@ -2,7 +2,7 @@
 
 use core::fmt::{Debug, Display};
 use std::cmp::{max, min};
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, HashMap};
 use std::time::Duration;
 
 fn problem1ab(do_print: bool, folder: &str) {
@@ -2671,31 +2671,256 @@ fn problem18ab(do_print: bool, folder: &str) {
     }
 }
 
+fn problem19ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/19.in").unwrap();
+
+    let mut state_name_to_id: HashMap<String, u32> = Default::default();
+
+    const INPUT_STATE: u32 = 0;
+    const ACCPET_STATE: u32 = 1;
+    const REJECT_STATE: u32 = 2;
+
+    state_name_to_id.insert("in".to_owned(), INPUT_STATE);
+    state_name_to_id.insert("A".to_owned(), ACCPET_STATE);
+    state_name_to_id.insert("R".to_owned(), REJECT_STATE);
+
+    let byte_slice_to_string = |slice: &[u8]| -> String {
+        slice.iter().map(|s| *s as char).collect::<String>()
+    };
+
+    let read_name = |i: &mut usize| {
+        let beg = *i;
+        // excludes {},:<>
+        while ('A'..='z').contains(&(data[*i] as char)) { *i+=1; }
+
+        byte_slice_to_string(&data[beg..*i])
+    };
+
+    let read_number = |i: &mut usize| {
+        let mut num = 0;
+        while ('0'..='9').contains(&(data[*i] as char)) {
+            num = num * 10 + data[*i] as u32 - '0' as u32;
+            *i+=1; 
+        }
+
+        num
+    };
+
+    struct Transition {
+        to_id: u32,
+        limit: u32,
+        variable: u32,
+        greater: bool,
+    }
+
+    struct Node {
+        edges_out: Vec<Transition>,
+        next_id: u32,
+    }
+
+    let get_id_of_name = |name: String, map: &mut HashMap<String, u32>, nodes: &mut Vec<Node>| -> u32 {
+        if let Some(id) = map.get(&name) {*id}
+        else {
+            let id = map.len() as u32;
+            map.insert(name, id);
+            nodes.push(Node{edges_out: vec![], next_id: 0});
+            id
+        }
+    };
+
+    let name_to_variable = |name: char| -> u32 {
+        match name {
+            'x' => 0,
+            'm' => 1,
+            'a' => 2,
+            's' => 3,
+            _ => panic!("Unrecognised name: {}", name),
+        }
+    };
+
+    let mut nodes = Vec::new();
+    nodes.push(Node{edges_out: vec![], next_id: 0});
+    nodes.push(Node{edges_out: vec![], next_id: 0});
+    nodes.push(Node{edges_out: vec![], next_id: 0});
+
+    let mut i = 0;
+    while data[i] as char != '\n' {
+        let state_name = read_name(&mut i);
+        let from_id = get_id_of_name(state_name.clone(), &mut state_name_to_id, &mut nodes);
+
+        // if do_print {println!("Reading specs for {}", state_name)}
+
+        if data[i] as char != '{' {panic!("Expected {{ at {}", i);}
+
+        i += 1;
+
+        loop {
+            let name = read_name(&mut i);
+            match data[i] as char {
+                '<' | '>' => {
+                    let greater = data[i] as char == '>';
+                    i += 1;
+
+                    let limit = read_number(&mut i);
+                    if data[i] as char != ':' {panic!("Expected : at {}", i)}
+                    i += 1;
+                    
+                    let target = read_name(&mut i);
+                    i += 1;
+                    
+                    // if do_print { println!(" -> Found condition: {}, {}, {}, {}", name, greater, limit, target) };
+                    let to_id = get_id_of_name(target, &mut state_name_to_id, &mut nodes);
+
+                    let variable = name_to_variable(name.chars().next().unwrap());
+
+                    nodes[from_id as usize].edges_out.push(Transition{to_id, limit, variable, greater});
+                }
+                '}' => {
+                    // if do_print { println!(" -> Found end: {}", name) };
+                    let to_id = get_id_of_name(name, &mut state_name_to_id, &mut nodes);
+
+                    nodes[from_id as usize].next_id = to_id;
+                    break;
+                }
+                _ => panic!("Unexpected token at {}: {}", i, data[i] as char),
+            };
+        }
+        i += 2;
+    }
+    i += 1;
+
+    // if do_print {
+    //     for i in 0..nodes.len() {
+    //         print!("{} -> ",i);
+    //         for t in nodes[i].edges_out.iter() {
+    //             print!("{},{},{},{} ; ", t.to_id, t.variable, t.greater, t.limit);
+    //         }
+    //         println!("{}", nodes[i].next_id);
+    //     }
+    // }
+
+    let mut sum = 0;
+
+    while i < data.len() {
+        i += 3;
+        let x = read_number(&mut i);
+        i += 3;
+        let m = read_number(&mut i);
+        i += 3;
+        let a = read_number(&mut i);
+        i += 3;
+        let s = read_number(&mut i);
+        i += 2;
+
+        let xmas = x+m+a+s;
+
+        let nums = [x,m,a,s];
+        let mut state = INPUT_STATE;
+
+        while state != ACCPET_STATE && state != REJECT_STATE {
+            let node = &nodes[state as usize];
+            let mut found = false;
+            
+            for t in node.edges_out.iter() {
+                if (t.greater  && nums[t.variable as usize] > t.limit) || 
+                (!t.greater && nums[t.variable as usize] < t.limit) {
+                    state = t.to_id;
+                    found = true;
+                    break;
+                }
+            }
+            
+            if !found {
+                state = node.next_id;
+            }
+
+            // if do_print { print!(" -> {}", state);}
+        }
+        // if do_print {println!()}
+
+        if state == ACCPET_STATE {
+            sum += xmas;
+        }
+    }
+
+    let mut states = vec![(INPUT_STATE, [[0,4001]; 4])];
+
+    let mut accepted_volume = 0;
+
+    'state_advancing: while let Some((s, mut props)) = states.pop() {
+        // if do_print {
+        //     println!("Processing: {}, {:?}", s, props);
+        //     if s == REJECT_STATE {
+        //         println!(" -> REJECTED");
+        //     }
+        //     if s == ACCPET_STATE {
+        //         println!(" -> Accepted viii");
+        //     }
+        // }
+
+        if s == ACCPET_STATE {
+            accepted_volume += props.into_iter().map(|l| l[1] as i64 - l[0] as i64 - 1).product::<i64>();
+            continue 'state_advancing;
+        }
+
+        if s == REJECT_STATE {
+            continue 'state_advancing;
+        }
+
+        for t in nodes[s as usize].edges_out.iter() {
+            let mut props_pass = props.clone();
+            let var = t.variable as usize;
+
+            if t.greater {
+                props_pass[var][0] = t.limit;
+                props[var][1] = t.limit+1;
+            } else {
+                props_pass[var][1] = t.limit;
+                props[var][0] = t.limit-1;
+            }
+            if props_pass[var][0] < props_pass[var][1] {
+                states.push((t.to_id, props_pass));
+            }
+            if props[var][0] >= props[var][1] {
+                continue 'state_advancing;
+            }
+        }
+        states.push((nodes[s as usize].next_id, props));
+    }
+
+    if do_print {
+        println!("Problem 19 A: {}", sum);
+        println!("Problem 19 B: {}", accepted_volume);
+    }
+
+}
+
 fn main() {
     let problems = [
-        // problem1ab,
-        // problem2ab,
-        // problem3ab,
-        // problem4ab,
-        // problem5a,
-        // problem5b,
-        // problem6ab,
-        // problem7ab,
-        // problem8ab,
-        // problem9ab,
-        // problem10ab,
-        // problem11ab,
-        // problem12ab,
-        // problem13ab,
+        problem1ab,
+        problem2ab,
+        problem3ab,
+        problem4ab,
+        problem5a,
+        problem5b,
+        problem6ab,
+        problem7ab,
+        problem8ab,
+        problem9ab,
+        problem10ab,
+        problem11ab,
+        problem12ab,
+        problem13ab,
         problem14ab,
-        // problem15ab,
-        // problem16ab,
-        // problem17ab,
-        // problem18ab,
+        problem15ab,
+        problem16ab,
+        problem17ab,
+        problem18ab,
+        problem19ab,
     ];
     let folder = "input";
 
-    let number_of_runs = 100;
+    let number_of_runs = 1000;
     println!(
         "Running solutions {} times, to collect timing",
         number_of_runs
