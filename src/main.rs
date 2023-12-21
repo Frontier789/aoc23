@@ -3070,6 +3070,283 @@ fn problem20ab(do_print: bool, folder: &str) {
     }
 }
 
+fn problem21ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/21.in").unwrap();
+
+    let mut w = 0;
+    while data[w] as char != '\n' {
+        w += 1;
+    }
+    let w = w;
+
+    let h = data.len() / (w + 1);
+
+    // if do_print {
+    //     println!("W = {}, H = {}", w, h);
+    // }
+
+    let mut blocked = vec![false; w*h];
+    let mut start = (0,0);
+
+    for i in 0..h {
+        for j in 0..w {
+            match data[i*(w+1) + j] as char {
+                '#' => blocked[i*w+j] = true,
+                'S' => start = (i,j),
+                _ => ()
+            }
+        }
+    }
+
+    // if do_print {
+    //     println!("S = {:?}", start);
+    //     for i in 0..h {
+    //         for j in 0..w {
+    //             if blocked[i*w+j] {
+    //                 print!("#");
+    //             } else {
+    //                 print!(".");
+    //             }
+    //         }
+    //         println!()
+    //     }
+    //     println!();
+    // }
+
+    const INFINITE: u32 = 0xFFFFFFFF;
+    let mut first_reach = vec![INFINITE; w*h];
+    first_reach[start.0*w + start.1] = 0;
+
+    let mut q = Vec::new();
+    q.push(start);
+
+    let mut t = 0;
+    while !q.is_empty() {
+        t += 1;
+        let mut q2 = Vec::new();
+        for (i,j) in q.into_iter() {
+            if i > 0 && !blocked[(i-1)*w+j] && first_reach[(i-1)*w+j] == INFINITE {
+                first_reach[(i-1)*w+j] = t;
+                q2.push((i-1, j));
+            }
+            if i+1 < h && !blocked[(i+1)*w+j] && first_reach[(i+1)*w+j] == INFINITE {
+                first_reach[(i+1)*w+j] = t;
+                q2.push((i+1, j));
+            }
+            if j > 0 && !blocked[i*w+j-1] && first_reach[i*w+j-1] == INFINITE {
+                first_reach[i*w+j-1] = t;
+                q2.push((i, j-1));
+            }
+            if i+1 < h && !blocked[i*w+j+1] && first_reach[i*w+j+1] == INFINITE {
+                first_reach[i*w+j+1] = t;
+                q2.push((i, j+1));
+            }
+        }
+        q = q2;
+    }
+
+    // if do_print {
+    //     for i in 0..h {
+    //         for j in 0..w {
+    //             if blocked[i*w+j] {
+    //                 print!("   _");
+    //             } else if first_reach[i*w+j] == INFINITE {
+    //                 print!(" inf");
+    //             } else {
+    //                 print!("{:>4}", first_reach[i*w+j]);
+    //             }
+    //         }
+    //         println!()
+    //     }
+    //     println!();
+    // }
+
+    let mut reachable_exactly = 0;
+
+    // if do_print {
+    //     for i in 0..h {
+    //         for j in 0..w {
+    //             if blocked[i*w+j] {
+    //                 print!("#");
+    //             } else {
+    //                 if first_reach[i*w+j] <= steps {
+    //                     if (steps - first_reach[i*w+j]) % 2 == 0 {
+    //                         print!("O");
+    //                     } else {
+    //                         print!("_");
+    //                     }
+    //                 } else {
+    //                     print!(".");
+    //                 }
+    //             }
+    //         }
+    //         println!()
+    //     }
+    //     println!()
+    // }
+    
+    let steps = 64;
+    for i in 0..h {
+        for j in 0..w {
+            if !blocked[i*w+j] && first_reach[i*w+j] <= steps {
+                if (steps - first_reach[i*w+j]) % 2 == 0 {
+                    reachable_exactly += 1;
+                }
+            }
+        }
+    }
+
+    if w != h {
+        panic!("I assumed w=h but w={} and h={}",w,h);
+    }
+
+    let ultra_step: i64 = 26501365;
+
+    // // Proof that this is set up extremely nicely: 
+    // if do_print {
+    //     for i in 0..h {
+    //         for j in 0..w {
+    //             if !blocked[i*w+j] && first_reach[i*w+j] < INFINITE {
+    //                 let di = (start.0 as i64 - i as i64).abs();
+    //                 let dj = (start.1 as i64 - j as i64).abs();
+    //                 let d = di+dj;
+    //                 if d % 2 == ultra_step % 2 {
+    //                     if (ultra_step - d) % w as i64 == 0 {
+    //                         print!("O");
+    //                     } else {
+    //                         if d < ultra_step % w as i64 {
+    //                             print!("|");
+    //                         } else {
+    //                             print!(".");
+    //                         }
+    //                     }
+    //                 } else {
+    //                     print!("_");
+    //                 }
+    //             } else {
+    //                 print!("#");
+    //             }
+    //         }
+    //         println!()
+    //     }
+    // }
+
+    //           ?      O      ?          
+    //          ?#?    O#O    ?#?         
+    //         ?###?  O###O  ?###?        
+    //        ?#####?O#####O?#####?       
+    //         ?###?O ?###? O?###?        
+    //          ?#?O   ?#?   O?#?         
+    //           ?O     ?     O?          
+    //    ?      O             O      ?   
+    //   ?#?    O#?           ?#O    ?#?  
+    //  ?###?  O###?         ?###O  ?###? 
+    // ?#####?O#####?       ?#####O?#####?
+    //  ?###?O ?###?         ?###? O?###? 
+    //   ?#?O   ?#?           ?#?   O?#?  
+    //    ?O     ?             ?     O?   
+    //    O                           O   
+    //   O#?                         ?#O  
+    //  O###?                       ?###O 
+    // O#####?                     ?#####O
+    //  O###?                       ?###O 
+    //   O#?                         ?#O  
+    //    O                           O   
+    //    ?O     ?             ?     O?   
+    //   ?#?O   ?#?           ?#?   O?#?  
+    //  ?###?O ?###?         ?###? O?###? 
+    // ?#####?O#####?       ?#####O?#####?
+    //  ?###?  O###?         ?###O  ?###? 
+    //   ?#?    O#?           ?#O    ?#?  
+    //    ?      O             O      ?   
+    //           ?O     ?     O?          
+    //          ?#?O   ?#?   O?#?         
+    //         ?###?O ?###? O?###?        
+    //        ?#####?O#####O?#####?       
+    //         ?###?  O###O  ?###?        
+    //          ?#?    O#O    ?#?         
+    //           ?      O      ?          
+
+    
+    // corners:
+    //   CC?  
+    //  CC#C? 
+    // CC###C?
+    // C#####?
+    // ?C###??
+    //  ?C#?? 
+    //   ???  
+
+    // corners: k=3
+    //    cC?  
+    //   cC#C? 
+    //  cC#_#C?
+    // cC#_#_#C?
+    // C#_#_#_#?
+    // ?C#_#_#??
+    //  ?C#_#??
+    //   ?C#?? 
+    //    ???  
+
+    // bodies: k=2
+    //   ?B?  
+    //  ?B#B? 
+    // ?B###B?
+    // B#####B
+    // ?B###B?
+    //  ?B#B? 
+    //   ?B?  
+
+    // w-1 + w*k <= u
+    // k <= (u - w + 1) / w
+    let k = (ultra_step as i64 - w as i64 + 1) / w as i64;
+    let always_reachable_even = k*k; // _
+    let always_reachable_odd = (k+1)*(k+1); // #
+    let corners_reachable_even = 3*k+2; // C
+    let corners_reachable_odd = k+1; // c
+    let insides_reachable_even = (k+1)*4; // B
+    let insides_reachable_odd = 0; // b
+
+    // if do_print {
+    //     println!("k={}",k);
+    // }
+
+    let mut total = 0;
+
+    for i in 0..h {
+        for j in 0..w {
+            if !blocked[i*w+j] && first_reach[i*w+j] < INFINITE {
+                let di = (start.0 as i64 - i as i64).abs();
+                let dj = (start.1 as i64 - j as i64).abs();
+                let d = di+dj;
+                if d % 2 == ultra_step % 2 + k%2 - 1 {
+                    total += always_reachable_even;
+
+                    if d <= ultra_step % (w as i64) {
+                        total += insides_reachable_even;
+                    } else {
+                        total += corners_reachable_even;
+                    }
+                } else {
+                    total += always_reachable_odd;
+
+                    if d <= ultra_step % (w as i64) {
+                        total += insides_reachable_odd;
+                    } else {
+                        total += corners_reachable_odd;
+                    }
+                }
+            }
+        }
+    }
+
+    if do_print {
+        println!("Problem 21 A: {}", reachable_exactly);
+        println!("Problem 21 B: {}", total);
+    }
+
+}
+
 fn main() {
     let problems = [
         // problem1ab,
@@ -3092,7 +3369,8 @@ fn main() {
         // problem17ab,
         // problem18ab,
         // problem19ab,
-        problem20ab,
+        // problem20ab,
+        problem21ab,
     ];
     let folder = "input";
 
