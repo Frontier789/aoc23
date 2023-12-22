@@ -3344,6 +3344,120 @@ fn problem21ab(do_print: bool, folder: &str) {
         println!("Problem 21 A: {}", reachable_exactly);
         println!("Problem 21 B: {}", total);
     }
+}
+
+fn problem22ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/22.in").unwrap();
+
+    let read_number = |i: &mut usize| {
+        let mut num = 0;
+        while ('0'..='9').contains(&(data[*i] as char)) {
+            num = num * 10 + data[*i] as u32 - '0' as u32;
+            *i+=1; 
+        }
+
+        num
+    };
+
+    type Dim = u32;
+
+    #[derive(PartialEq, PartialOrd, Eq, Ord, Debug)]
+    struct Brick {
+        z0: Dim,
+        x0: Dim,
+        y0: Dim,
+        z1: Dim,
+        x1: Dim,
+        y1: Dim,
+    }
+
+    let mut bricks = vec![];
+
+    let mut i = 0;
+    while i < data.len() {
+        let x0 = data[i] as Dim - '0' as Dim;
+        let y0 = data[i+2] as Dim - '0' as Dim;
+        i += 4;
+        let z0 = read_number(&mut i);
+        i += 1;
+        let x1 = data[i] as Dim - '0' as Dim;
+        let y1 = data[i+2] as Dim - '0' as Dim;
+        i += 4;
+        let z1 = read_number(&mut i);
+        i += 1;
+
+        bricks.push(Brick{x0,y0,z0,x1,y1,z1});
+
+        // if x0 > x1 || y0 > y1 || z0 > z1 {panic!("Expected order, but got: {},{},{} - {},{},{}",x0,y0,z0,x1,y1,z1);}
+    }
+
+    bricks.sort();
+
+    // if do_print {
+    //     for b in bricks.iter() {
+    //         println!("{:?}", b);
+    //     }
+    // }
+
+    const INFINITE: u32 = 0xFFFFFFFF;
+
+    let mut height = vec![1; 10*10];
+    let mut top_brick_id = vec![INFINITE; 10*10];
+
+    let mut can_be_disintegrated = vec![true; bricks.len()];
+    let mut last_supported = vec![INFINITE; bricks.len()];
+
+    for i in 0..bricks.len() {
+        let b = &bricks[i];
+
+        let mut maxh = 0;
+        let mut supporters = 0;
+        let mut one_supporter = 0;
+
+        for x in b.x0..=b.x1 {
+            for y in b.y0..=b.y1 {
+                let id = (x*10+y) as usize;
+
+                maxh = max(maxh, height[id]);
+            }
+        }
+
+        for x in b.x0..=b.x1 {
+            for y in b.y0..=b.y1 {
+                let id = (x*10+y) as usize;
+
+                if height[id] == maxh {
+                    let top_id = top_brick_id[id];
+                    if top_id != INFINITE {
+                        if last_supported[top_id as usize] != i as u32 {
+                            last_supported[top_id as usize] = i as u32;
+                            supporters += 1;
+                            one_supporter = top_id;
+                        }
+                    }
+                }
+            }
+        }
+
+        for x in b.x0..=b.x1 {
+            for y in b.y0..=b.y1 {
+                let id = (x*10+y) as usize;
+
+                height[id] = maxh + b.z1 - b.z0 + 1;
+                top_brick_id[id] = i as u32;
+            }
+        }
+               
+        if supporters == 1 && one_supporter != INFINITE {
+            can_be_disintegrated[one_supporter as usize] = false;
+        }
+    }
+
+    let disint = can_be_disintegrated.iter().map(|b| *b as i32).sum::<i32>();
+
+    if do_print {
+        println!("Problem 22 A: {}", disint);
+    }
 
 }
 
@@ -3370,7 +3484,8 @@ fn main() {
         // problem18ab,
         // problem19ab,
         // problem20ab,
-        problem21ab,
+        // problem21ab,
+        problem22ab,
     ];
     let folder = "input";
 
