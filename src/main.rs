@@ -3548,6 +3548,8 @@ fn problem22ab(do_print: bool, folder: &str) {
         panic!("Toposorted n = {} vs n = {}", rev_topo_sorted.len(), n);
     }
 
+    let mut compressed = vec![0; n];
+
     for i in rev_topo_sorted {
         let current = i as usize;
 
@@ -3560,6 +3562,9 @@ fn problem22ab(do_print: bool, folder: &str) {
             let child = children[current][0] as usize;
 
             if parents[child] == 1 {
+                compressed[current] = compressed[child] + 1;
+                children.swap(current, child);
+
                 falls[current] = falls[child] + 1;
 
                 continue;
@@ -3574,7 +3579,7 @@ fn problem22ab(do_print: bool, folder: &str) {
         let mut will_fall = 0;
 
         while let Some(k) = q.pop() {
-            will_fall += 1;
+            will_fall += 1 + compressed[k as usize];
             
             for child in children[k as usize].iter() {
                 pillars[*child as usize] -= 1;
