@@ -3404,10 +3404,15 @@ fn problem22ab(do_print: bool, folder: &str) {
     let mut height = vec![1; 10*10];
     let mut top_brick_id = vec![INFINITE; 10*10];
 
-    let mut can_be_disintegrated = vec![true; bricks.len()];
-    let mut last_supported = vec![INFINITE; bricks.len()];
+    let n = bricks.len();
 
-    for i in 0..bricks.len() {
+    let mut can_be_disintegrated = vec![true; n];
+    let mut last_supported = vec![INFINITE; n];
+
+    let mut children = vec![vec![]; n];
+    let mut parents = vec![0; n];
+
+    for i in 0..n {
         let b = &bricks[i];
 
         let mut maxh = 0;
@@ -3431,6 +3436,8 @@ fn problem22ab(do_print: bool, folder: &str) {
                     if top_id != INFINITE {
                         if last_supported[top_id as usize] != i as u32 {
                             last_supported[top_id as usize] = i as u32;
+                            children[top_id as usize].push(i as u32);
+                            parents[i] += 1;
                             supporters += 1;
                             one_supporter = top_id;
                         }
@@ -3455,8 +3462,89 @@ fn problem22ab(do_print: bool, folder: &str) {
 
     let disint = can_be_disintegrated.iter().map(|b| *b as i32).sum::<i32>();
 
+    // if do_print {
+    //     for i in 0..n {
+    //         println!("Node {}: parents={}, children={:?}", i, parents[i], children[i]);
+    //     }
+    //     println!();
+    // }
+
+    // let mut would_weaken = vec![vec![]; n];
+    // let mut rest_on = vec![0; n];
+    // let mut visited: Vec<bool> = vec![false; n];
+
+    // enum Action {
+    //     PushChildren,
+    //     Evaluate
+    // }
+
+    // for i in 0..n {
+    //     if !visited[i] {
+    //         let mut q = Vec::new();
+    //         q.push((Action::PushChildren, i as u32));
+    //         while let Some((a, k)) = q.pop() {
+    //             match a {
+    //                 Action::PushChildren => {
+    //                     visited[k as usize] = true;
+    //                     q.push((Action::Evaluate, k));
+
+    //                     for child in children[k as usize].iter() {
+    //                         if parents[*child as usize] == 1 {
+    //                             q.push((Action::PushChildren, *child));
+    //                         } else {
+    //                             would_weaken[i].push(*child);
+    //                         }
+    //                     }
+    //                 },
+    //                 Action::Evaluate => {
+    //                     for child in children[k as usize].iter() {
+    //                         if parents[*child as usize] == 1 {
+    //                             rest_on[k as usize] += rest_on[*child as usize] + 1;
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
+    // if do_print {
+    //     for i in 0..n {
+    //         println!("Node {}: rest_on={}, would_weaken={:?}", i, rest_on[i], would_weaken[i]);
+    //     }
+    // }
+
+    let mut falls = vec![0; n];
+
+
+    for i in 0..n {
+        let mut pillars = parents.clone();
+
+        let mut q = Vec::new();
+        q.push(i as u32);
+
+        let mut will_fall = 0;
+
+        while let Some(k) = q.pop() {
+            will_fall += 1;
+            
+            for child in children[k as usize].iter() {
+                pillars[*child as usize] -= 1;
+                if pillars[*child as usize] == 0 {
+                    q.push(*child);
+                }
+            }
+        }
+
+        falls[i] = will_fall;
+    }
+
+    let total_fall = falls.iter().map(|k| *k-1).sum::<i32>();
+
+    // 79122
     if do_print {
         println!("Problem 22 A: {}", disint);
+        println!("Problem 22 B: {}", total_fall);
     }
 
 }
@@ -3489,7 +3577,7 @@ fn main() {
     ];
     let folder = "input";
 
-    let number_of_runs = 1000;
+    let number_of_runs = 10;
     println!(
         "Running solutions {} times, to collect timing",
         number_of_runs
