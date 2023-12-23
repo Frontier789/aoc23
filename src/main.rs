@@ -3462,6 +3462,11 @@ fn problem22ab(do_print: bool, folder: &str) {
 
     let disint = can_be_disintegrated.iter().map(|b| *b as i32).sum::<i32>();
 
+    enum Action {
+        PushChildren,
+        Evaluate
+    }
+
     // if do_print {
     //     for i in 0..n {
     //         println!("Node {}: parents={}, children={:?}", i, parents[i], children[i]);
@@ -3472,11 +3477,6 @@ fn problem22ab(do_print: bool, folder: &str) {
     // let mut would_weaken = vec![vec![]; n];
     // let mut rest_on = vec![0; n];
     // let mut visited: Vec<bool> = vec![false; n];
-
-    // enum Action {
-    //     PushChildren,
-    //     Evaluate
-    // }
 
     // for i in 0..n {
     //     if !visited[i] {
@@ -3515,13 +3515,61 @@ fn problem22ab(do_print: bool, folder: &str) {
     // }
 
     let mut falls = vec![0; n];
-
+    // let mut weakens = vec![vec![]; n];
+    
+    let mut rev_topo_sorted = vec![];
+    let mut visited = vec![false; n];
 
     for i in 0..n {
+        if !visited[i] {
+            visited[i] = true;
+            let mut q = vec![(Action::PushChildren, i as u32)];
+
+            while let Some((a, k)) = q.pop() {
+                match a {
+                    Action::PushChildren => {
+                        q.push((Action::Evaluate, k));
+                        for c in children[k as usize].iter() {
+                            if !visited[*c as usize] {
+                                visited[*c as usize] = true;
+                                q.push((Action::PushChildren, *c));
+                            }
+                        }
+                    },
+                    Action::Evaluate =>  {
+                        rev_topo_sorted.push(k);
+                    },
+                }
+            }
+        }
+    }
+
+    if rev_topo_sorted.len() != n {
+        panic!("Toposorted n = {} vs n = {}", rev_topo_sorted.len(), n);
+    }
+
+    for i in rev_topo_sorted {
+        let current = i as usize;
+
+        if children[current].len() == 0 {
+            falls[current] = 1;
+            continue;
+        }
+
+        if children[current].len() == 1 {
+            let child = children[current][0] as usize;
+
+            if parents[child] == 1 {
+                falls[current] = falls[child] + 1;
+
+                continue;
+            }
+        }
+
         let mut pillars = parents.clone();
 
         let mut q = Vec::new();
-        q.push(i as u32);
+        q.push(i);
 
         let mut will_fall = 0;
 
@@ -3536,7 +3584,7 @@ fn problem22ab(do_print: bool, folder: &str) {
             }
         }
 
-        falls[i] = will_fall;
+        falls[i as usize] = will_fall;
     }
 
     let total_fall = falls.iter().map(|k| *k-1).sum::<i32>();
@@ -3577,7 +3625,7 @@ fn main() {
     ];
     let folder = "input";
 
-    let number_of_runs = 10;
+    let number_of_runs = 1000;
     println!(
         "Running solutions {} times, to collect timing",
         number_of_runs
