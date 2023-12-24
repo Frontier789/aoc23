@@ -3692,21 +3692,21 @@ fn problem23ab(do_print: bool, folder: &str) {
 
     let node_count = next_id as usize;
         
-    if do_print {
-        for i in 0..h {
-            for j in 0..w {
-                if ids[i*w+j] == -1 {
-                    print!(" []");
-                } else if ids[i*w+j] == -2 {
-                    print!(" ..");
-                } else {
-                    print!("{:>3}", ids[i*w+j]);
-                }
-            }
-            println!();
-        }
-        println!();
-    }
+    // if do_print {
+    //     for i in 0..h {
+    //         for j in 0..w {
+    //             if ids[i*w+j] == -1 {
+    //                 print!(" []");
+    //             } else if ids[i*w+j] == -2 {
+    //                 print!(" ..");
+    //             } else {
+    //                 print!("{:>3}", ids[i*w+j]);
+    //             }
+    //         }
+    //         println!();
+    //     }
+    //     println!();
+    // }
 
 
     
@@ -3756,22 +3756,22 @@ fn problem23ab(do_print: bool, folder: &str) {
         }
     }
 
-    if do_print {
-        for i in 0..node_count {
-            println!("{} -> {:?}", i, graph[i]);
-        }
-    }
+    // if do_print {
+    //     for i in 0..node_count {
+    //         println!("{} -> {:?}", i, graph[i]);
+    //     }
+    // }
 
     if node_count >= 64 {
         panic!("Expected up to 63 junctions but found {}", node_count);
     }
 
-    let mut q = VecDeque::new();
-    q.push_back((0, 0, 1u64));
+    let mut q = Vec::new();
+    q.push((0, 0, 1u64));
 
     let mut maximum_length = 0;
 
-    while let Some((p, distance, visited)) = q.pop_front() {
+    while let Some((p, distance, visited)) = q.pop() {
         for (next, length) in graph[p as usize].iter() {
             if *next as usize == node_count-1 {
                 if maximum_length < distance + length {
@@ -3780,7 +3780,7 @@ fn problem23ab(do_print: bool, folder: &str) {
             }
 
             if visited & (1 << next) == 0 {
-                q.push_back((*next, distance + length, visited | (1 << next)));
+                q.push((*next, distance + length, visited | (1 << next)));
             }
         }
     }
@@ -3821,7 +3821,7 @@ fn main() {
     ];
     let folder = "input";
 
-    let number_of_runs = 1;
+    let number_of_runs = 30;
     println!(
         "Running solutions {} times, to collect timing",
         number_of_runs
