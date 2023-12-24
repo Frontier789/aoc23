@@ -3474,48 +3474,7 @@ fn problem22ab(do_print: bool, folder: &str) {
     //     println!();
     // }
 
-    // let mut would_weaken = vec![vec![]; n];
-    // let mut rest_on = vec![0; n];
-    // let mut visited: Vec<bool> = vec![false; n];
-
-    // for i in 0..n {
-    //     if !visited[i] {
-    //         let mut q = Vec::new();
-    //         q.push((Action::PushChildren, i as u32));
-    //         while let Some((a, k)) = q.pop() {
-    //             match a {
-    //                 Action::PushChildren => {
-    //                     visited[k as usize] = true;
-    //                     q.push((Action::Evaluate, k));
-
-    //                     for child in children[k as usize].iter() {
-    //                         if parents[*child as usize] == 1 {
-    //                             q.push((Action::PushChildren, *child));
-    //                         } else {
-    //                             would_weaken[i].push(*child);
-    //                         }
-    //                     }
-    //                 },
-    //                 Action::Evaluate => {
-    //                     for child in children[k as usize].iter() {
-    //                         if parents[*child as usize] == 1 {
-    //                             rest_on[k as usize] += rest_on[*child as usize] + 1;
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
-    // if do_print {
-    //     for i in 0..n {
-    //         println!("Node {}: rest_on={}, would_weaken={:?}", i, rest_on[i], would_weaken[i]);
-    //     }
-    // }
-
     let mut falls = vec![0; n];
-    // let mut weakens = vec![vec![]; n];
     
     let mut rev_topo_sorted = vec![];
     let mut visited = vec![false; n];
@@ -3602,6 +3561,237 @@ fn problem22ab(do_print: bool, folder: &str) {
 
 }
 
+fn problem23ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/23.in").unwrap();
+    
+    let mut w = 0;
+    while data[w] as char != '\n' {w += 1;}
+    let w = w;
+    let h = data.len() / (w+1);
+
+    let mut field = vec!['K'; w*h];
+    for i in 0..h {
+        for j in 0..w {
+            field[i*w+j] = data[i*(w+1)+j] as char;
+        }
+    }
+
+    let mut visited = vec![false; w*h];
+    let mut in_edges = vec![0; w*h];
+    in_edges[1] = 1;
+    visited[1] = true;
+    
+    let mut q = vec![(-1i32, 1i32, 0i32, 1i32)];
+
+    while let Some((prev_i, prev_j, i,j)) = q.pop() {
+        for (di, dj) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
+            if i+di != prev_i || j+dj != prev_j {
+                if i+di >= 0 && i+di < h as i32 && j+dj >= 0 && j+dj < w as i32 {
+                    let next = (i+di) as usize * w + (j+dj) as usize;
+                    let c = field[next];
+    
+                    if c == '.' || (c == '>' && dj == 1) || (c == 'v' && di == 1) {
+                        in_edges[next] += 1;
+                        if !visited[next] {
+                            visited[next] = true;
+                            q.push((i,j,i+di,j+dj));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // if do_print {
+    //     for i in 0..h {
+    //         for j in 0..w {
+    //             if in_edges[i*w+j] < 1 {
+    //                 print!(" ");
+    //             } else {
+    //                 print!("{}", in_edges[i*w+j]);
+    //             }
+    //         }
+    //         println!();
+    //     }
+    //     println!();
+    // }
+
+    let mut q = vec![(0i32,1i32)];
+    in_edges[1] -= 1;
+
+    // let mut maxd = vec![0; w*h];
+
+    let mut longest_hike = 0;
+
+    let mut d = 0;
+
+    while !q.is_empty() {
+        let mut q2 = vec![];
+
+        while let Some((i,j)) = q.pop() {
+            // maxd[i as usize * w + j as usize] = d;
+
+            if i == h as i32 - 1 {
+                longest_hike = d;
+            }
+    
+            for (di, dj) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
+                if i+di >= 0 && i+di < h as i32 && j+dj >= 0 && j+dj < w as i32 {
+                    let next = (i+di) as usize * w + (j+dj) as usize;
+                    let c = field[next];
+    
+                    if c == '.' || (c == '>' && dj == 1) || (c == 'v' && di == 1) {
+                        in_edges[next] -= 1;
+                        if in_edges[next] == 0 {
+                            q2.push((i+di,j+dj));
+                        }
+                    }
+                }
+            }
+        
+            // if do_print {
+            //     for i in 0..h {
+            //         for j in 0..w {
+            //             if maxd[i*w+j] < 1 {
+            //                 print!(" []");
+            //             } else {
+            //                 print!("{:>3}", maxd[i*w+j]);
+            //             }
+            //         }
+            //         println!();
+            //     }
+            //     println!();
+            // }
+        }
+
+        q = q2;
+        d += 1;
+    }
+
+    let mut ids = vec![-1; w*h];
+    ids[1] = 0;
+    let mut next_id: i32 = 1;
+
+    for p in w..w*(h-1) {
+        if field[p] as char != '#' {
+            let cnt = (field[p-1] as char != '#') as i32 + 
+                           (field[p-w] as char != '#') as i32 + 
+                           (field[p+1] as char != '#') as i32 + 
+                           (field[p+w] as char != '#') as i32;
+            if cnt > 2 {
+                ids[p] = next_id;
+                next_id += 1;
+            } else {
+                ids[p] = -2;
+            }
+        }
+    }
+
+    ids[w*h-2] = next_id;
+    next_id += 1;
+
+    let node_count = next_id as usize;
+        
+    if do_print {
+        for i in 0..h {
+            for j in 0..w {
+                if ids[i*w+j] == -1 {
+                    print!(" []");
+                } else if ids[i*w+j] == -2 {
+                    print!(" ..");
+                } else {
+                    print!("{:>3}", ids[i*w+j]);
+                }
+            }
+            println!();
+        }
+        println!();
+    }
+
+
+    
+    struct Cursor {
+        p: i32,
+        parent: i32,
+        distance: u32
+    }
+
+    let mut visited = vec![false; w*h];
+
+    let mut q = vec![Cursor {p: 1, parent: 0, distance: 0}];
+
+    let mut graph = vec![vec![]; node_count];
+
+    while let Some(Cursor{p, parent, distance}) = q.pop() {
+        if visited[p as usize] {continue;}
+        visited[p as usize] = true;
+
+        for d in [-(w as i32), -1, 1, w as i32] {
+            if p+d >= 0 && p+d < (w*h) as i32 {
+                let next = (p+d) as usize;
+
+                if field[next] != '#' {
+                    if ids[next] > -1 && ids[next] != parent {
+                        graph[parent as usize].push((ids[next], distance + 1));
+                        graph[ids[next] as usize].push((parent, distance + 1));
+                    }
+                }
+
+                if !visited[next] && field[next] != '#' {
+                    if ids[next] > -1 {
+                        q.push(Cursor{
+                            p: next as i32,
+                            parent: ids[next],
+                            distance: 0
+                        });
+                    } else {
+                        q.push(Cursor{
+                            p: next as i32,
+                            parent,
+                            distance: distance+1
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    if do_print {
+        for i in 0..node_count {
+            println!("{} -> {:?}", i, graph[i]);
+        }
+    }
+
+    if node_count >= 64 {
+        panic!("Expected up to 63 junctions but found {}", node_count);
+    }
+
+    let mut q = VecDeque::new();
+    q.push_back((0, 0, 1u64));
+
+    let mut maximum_length = 0;
+
+    while let Some((p, distance, visited)) = q.pop_front() {
+        for (next, length) in graph[p as usize].iter() {
+            if *next as usize == node_count-1 {
+                if maximum_length < distance + length {
+                    maximum_length = distance + length;
+                }
+            }
+
+            if visited & (1 << next) == 0 {
+                q.push_back((*next, distance + length, visited | (1 << next)));
+            }
+        }
+    }
+
+    if do_print {
+        println!("Problem 23 A: {}", longest_hike);
+        println!("Problem 23 B: {}", maximum_length);
+    }
+    
+}
+
 fn main() {
     let problems = [
         // problem1ab,
@@ -3626,11 +3816,12 @@ fn main() {
         // problem19ab,
         // problem20ab,
         // problem21ab,
-        problem22ab,
+        // problem22ab,
+        problem23ab,
     ];
     let folder = "input";
 
-    let number_of_runs = 1000;
+    let number_of_runs = 1;
     println!(
         "Running solutions {} times, to collect timing",
         number_of_runs
