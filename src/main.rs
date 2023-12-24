@@ -3792,6 +3792,124 @@ fn problem23ab(do_print: bool, folder: &str) {
     
 }
 
+
+fn problem24ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/24.in").unwrap();
+
+    let read_number = |i: &mut usize| {
+        let mut num = 0;
+        let mut neg = false;
+
+        if data[*i] as char == '-' {
+            neg = true;
+            *i+=1;
+        } else if data[*i] as char == ' ' {
+            *i+=1;
+        }
+        
+        while ('0'..='9').contains(&(data[*i] as char)) {
+            num *= 10;
+            num += data[*i] as i64;
+            num -= '0' as i64;
+            *i+=1; 
+        }
+
+        if neg {-num} else {num}
+    };
+
+    let mut rays = vec![];
+
+    let mut i = 0;
+
+    while i < data.len() {
+        let x = read_number(&mut i); i += 2;
+        let y = read_number(&mut i); i += 2;
+        let z = read_number(&mut i); i += 3;
+        let vx = read_number(&mut i) as i32; i += 2;
+        let vy = read_number(&mut i) as i32; i += 2;
+        let vz = read_number(&mut i) as i32; i += 1;
+
+        // if do_print { println!("p=({},{},{}), v=({},{},{})", x,y,z, vx,vy,vz); }
+
+        rays.push(((x,y,z), (vx,vy,vz)));
+    }
+
+    let mut intersections = 0;
+
+    let n = rays.len();
+
+    let min_coord = if folder.contains("small") {7i128} else {200000000000000i128};
+    let max_coord = if folder.contains("small") {27i128} else {400000000000000i128};
+
+    for i in 0..n {
+        let ((x0,y0,_),(vx0,vy0,_)) = rays[i];
+        for j in i+1..n {
+            let ((x1,y1,_),(vx1,vy1,_)) = rays[j];
+ 
+            // if do_print {println!("\nConsidering {} vs {}: (({},{}),({},{})) vs (({},{}),({},{}))",i,j, x0,y0,vx0,vy0, x1,y1,vx1,vy1);}
+            
+            // x0 + vx0 * t0 = x1 + vx1 * t1
+            // y0 + vy0 * t0 = y1 + vy1 * t1
+
+            // x0 * vy0 + vx0 * vy0 * t0 = x1 * vy0 + vx1 * vy0 * t1
+            // y0 * vx0 + vy0 * vx0 * t0 = y1 * vx0 + vy1 * vx0 * t1
+
+            // x0 * vy0 - y0 * vx0 = x1 * vy0 - y1 * vx0 + (vx1 * vy0 - vy1 * vx0) * t1
+            // A = B + C * t1
+
+            let mut a = (x0 * vy0 as i64 - y0 * vx0 as i64) - (x1 * vy0 as i64 - y1 * vx0 as i64);
+            let mut b = vx1 * vy0 - vy1 * vx0;
+            // t1 = a / b
+
+            if b == 0 {
+                // if do_print {println!(" -> Parallel")}
+                continue;
+            }
+
+            if a.signum() as i32 * b.signum() < 0 {
+                // if do_print {println!(" -> t_1 < 0")}
+                continue;
+            }
+
+            if b < 0 { a *= -1; b *= -1; }
+
+            let a = a as i128;
+            let b = b as i128;
+            // min <= x1 + vx1 * a / b <= max
+            if min_coord * b > x1 as i128 * b + vx1 as i128 * a || 
+               x1 as i128 * b + vx1 as i128 * a > max_coord * b || 
+               min_coord * b > y1 as i128 * b + vy1 as i128 * a || 
+               y1 as i128 * b + vy1 as i128 * a > max_coord * b {
+                // if do_print {println!(" -> intersection outside of defined area");}
+                continue;
+            }
+
+            // x0 + vx0 * t0 = x1 + vx1 * t1
+            // y0 + vy0 * t0 = y1 + vy1 * t1
+
+            // x0 * vy1 + vx0 * vy1 * t0 = x1 * vy1 + vx1 * vy1 * t1
+            // y0 * vx1 + vy0 * vx1 * t0 = y1 * vx1 + vy1 * vx1 * t1
+
+            // x0 * vy1 - y0 * vx1 + (vx0 * vy1 - vy0 * vx1) * t0 = x1 * vy1 - y1 * vx1
+
+            let c = (x1 * vy1 as i64 - y1 * vx1 as i64) - (x0 * vy1 as i64 - y0 * vx1 as i64);
+            let d = vx0 * vy1 - vy0 * vx1;
+
+            if c.signum() as i32 * d.signum() < 0 {
+                // if do_print {println!(" -> t_1 < 0")}
+                continue;
+            }
+
+            // if do_print {println!(" -> intersection fine");}
+
+            intersections += 1;
+        }
+    }
+
+    if do_print {
+        println!("Problem 24 A: {}", intersections);
+    }
+}
 fn main() {
     let problems = [
         // problem1ab,
@@ -3817,11 +3935,12 @@ fn main() {
         // problem20ab,
         // problem21ab,
         // problem22ab,
-        problem23ab,
+        // problem23ab,
+        problem24ab,
     ];
     let folder = "input";
 
-    let number_of_runs = 30;
+    let number_of_runs = 100;
     println!(
         "Running solutions {} times, to collect timing",
         number_of_runs
