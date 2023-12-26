@@ -3831,7 +3831,7 @@ fn problem24ab(do_print: bool, folder: &str) {
 
         // if do_print { println!("p=({},{},{}), v=({},{},{})", x,y,z, vx,vy,vz); }
 
-        rays.push(((x,y,z), (vx,vy,vz)));
+        rays.push(([x,y,z], [vx,vy,vz]));
     }
 
     let mut intersections = 0;
@@ -3842,9 +3842,9 @@ fn problem24ab(do_print: bool, folder: &str) {
     let max_coord = if folder.contains("small") {27i128} else {400000000000000i128};
 
     for i in 0..n {
-        let ((x0,y0,_),(vx0,vy0,_)) = rays[i];
+        let ([x0,y0,_],[vx0,vy0,_]) = rays[i];
         for j in i+1..n {
-            let ((x1,y1,_),(vx1,vy1,_)) = rays[j];
+            let ([x1,y1,_],[vx1,vy1,_]) = rays[j];
  
             // if do_print {println!("\nConsidering {} vs {}: (({},{}),({},{})) vs (({},{}),({},{}))",i,j, x0,y0,vx0,vy0, x1,y1,vx1,vy1);}
             
@@ -3905,9 +3905,240 @@ fn problem24ab(do_print: bool, folder: &str) {
             intersections += 1;
         }
     }
+    // x + vx * t0 = x0 + vx0 * t0
+    // x + vx * t1 = x1 + vx1 * t1
+    // x + vx * t2 = x2 + vx2 * t2
+    //
+    // y + vy * t0 = y0 + vy0 * t0
+    // y + vy * t1 = y1 + vy1 * t1
+    // y + vy * t2 = y2 + vy2 * t2
+    //
+    // z + vz * t0 = z0 + vz0 * t0
+    // z + vz * t1 = z1 + vz1 * t1
+    // z + vz * t2 = z2 + vz2 * t2
+    //
+    // Unknowns: x,y,z, vx,vy,vz, t0,t1,t2
+    // Equations: 9
+    // -> Should be solvable
+    // 
+    // (x - x_i) + (vx - vx_i) * t = 0
+    // 
+    // f_x_i(x, vx, t_i) = (x - x_i) + (vx - vx_i) * t_i
+    // 
+    // E = SUM(f_x_i^2 + f_y_i^2 + f_z_i^2, i=0..K)
+    // E = 0 => solution
+    //  
+    // d f_x_i^2 / d x = 2 * f_x_i
+    // d f_x_i^2 / d vx = 2 * f_x_i * t_i
+    // d f_x_i^2 / d t_i = 2 * f_x_i * (vx - vx_i)
+    //  
+    // d E / d r = SUM(d f_x_i^2 / dr + d f_y_i^2 / dr + d f_z_i^2 / dr, i=0..K)
+    // 
+    // Given t0 and t1 we can figure t2 out. Can we binary search?
+    // 
+    // x + vx * t0 = x0 + vx0 * t0
+    // x + vx * t1 = x1 + vx1 * t1
+    // A) vx = ((x1 + vx1 * t1) - (x0 + vx0 * t0)) / (t1 - t0)
+    // B) x = x1 + vx1 * t1 - vx * t1
+    // x + vx * t2 = x2 + vx2 * t2
+    // C) t2 = (x2 - x) / (vx - vx2)
+    // 
+    // y + vy * t0 = y0 + vy0 * t0
+    // y + vy * t1 = y1 + vy1 * t1
+    // y + vy * t2 = y2 + vy2 * t2
+    //
+    // z + vz * t0 = z0 + vz0 * t0
+    // z + vz * t1 = z1 + vz1 * t1
+    // z + vz * t2 = z2 + vz2 * t2
+    //
+    //
+    //
+    // (x+y+z) + (vx+vy+vz) * t0 = (x0+y0+z0) + (vx0+vy0+vz0) * t0
+    // p + v * t0 = p0 + v0 * t0
+    // p + v * t1 = p1 + v1 * t1
+    // 
+    // 
+    // vx * t0 * t1 = (x0 + vx0 * t0 - x) * t1
+    // vx * t1 * t0 = (x1 + vx1 * t1 - x) * t0
+    // 
+    // (x1 + vx1 * t1 - x) * t0 = (x0 + vx0 * t0 - x) * t1
+    // x1*t0 + vx1*t1*t0 - x*t0 = x0*t1 + vx0*t0*t1 - x*t1
+    // 
+    //
+    // (x - x0) / (vx0 - vx) = t0
+    // (y - y0) / (vy0 - vy) = t0
+
+
+
+    // t_i = (x_i - x) / (vx - vx_i) > 0
+    // x_i < x && vx < vx_i
+    // x_i > x && vx > vx_i
+    // hopefully there's a small window where this is true for all i
+
+    // If we know vx,vy,vz
+    //
+    // x + vx * t0 = x0 + vx0 * t0
+    // x + vx * t1 = x1 + vx1 * t1
+    //
+    // y + vy * t0 = y0 + vy0 * t0
+    // y + vy * t1 = y1 + vy1 * t1
+    //
+    // z + vz * t0 = z0 + vz0 * t0
+    // z + vz * t1 = z1 + vz1 * t1
+    //
+    // --
+    //
+    // x = x0 + (vx0 - vx) * t0
+    // x = x1 + (vx1 - vx) * t1
+    //
+    // y = y0 + (vy0 - vy) * t0
+    // y = y1 + (vy1 - vy) * t1
+    //
+    // z = z0 + (vz0 - vz) * t0
+    // z = z1 + (vz1 - vz) * t1
+    //
+    // --
+    //
+    // (vx1 - vx) * t1 = (x0 - x1) + (vx0 - vx) * t0
+    // (vy1 - vy) * t1 = (y0 - y1) + (vy0 - vy) * t0
+    // (vz1 - vz) * t1 = (z0 - z1) + (vz0 - vz) * t0
+    //
+    // --
+    //
+    // [(vx1-vx) (vx-vx0)] * [t1] = [(x0 - x1)]
+    // [(vy1-vy) (vy-vy0)] * [t0] = [(y0 - y1)]
+    // 
+    // D = (vx1-vx) * (vy-vy0) - (vx-vx0) * (vy1-vy)
+    // 
+    // (vy1-vy)*(vx1-vx)*t1 = (vy1-vy)*(x0-x1) + (vy1-vy)*(vx0-vx)*t0
+    // (vx1-vx)*(vy1-vy)*t1 = (vx1-vx)*(y0-y1) + (vx1-vx)*(vy0-vy)*t0
+    // 
+    // (vy1-vy)*(x0-x1) + (vy1-vy)*(vx0-vx)*t0 = (vx1-vx)*(y0-y1) + (vx1-vx)*(vy0-vy)*t0
+    // (vy1-vy)*(x0-x1) - (vx1-vx)*(y0-y1) = ((vx1-vx)*(vy0-vy) - (vy1-vy)*(vx0-vx)) * t0
+    // a = b*t0
+    // 
+    // t1 = ((x0 - x1) + (vx0 - vx) * t0) / (vx1 - vx)
+
+
+    let find_limits = |dim: usize| {
+        let mut rays_sorted_x = rays.iter().map(|(p,v)| (p[dim], v[dim])).collect::<Vec<_>>();
+        rays_sorted_x.sort();
+
+        // if do_print {
+        //     for k in rays_sorted_x[..10].iter() {
+        //         println!("{:?}",k);
+        //     }
+        // }
+
+        let mut vxs: Vec<_> = rays_sorted_x.iter().map(|(_p,v)| *v).collect();
+
+        let mut vx_mins = Vec::with_capacity(vxs.len());
+        vx_mins.push(vxs[0]);
+        for i in 1..vxs.len()-1 {
+            vx_mins.push(min(vx_mins[i-1], vxs[i]));
+        }
+
+        vxs.reverse();
+
+        let mut vx_maxs = Vec::with_capacity(vxs.len());
+        vx_maxs.push(vxs[0]);
+        for i in 1..vxs.len()-1 {
+            vx_maxs.push(max(vx_maxs[i-1], vxs[i]));
+        }
+
+        // if do_print {
+        //     vxs.reverse();
+        //     vx_maxs.reverse();
+        //     println!("vxs: {:?}", &vxs[..17]);
+        //     println!("vx_mins: {:?}", &vx_mins[..17]);
+        //     println!("vx_maxs: {:?}", &vx_maxs[..17]);
+        //     vx_maxs.reverse();
+        //     vxs.reverse();
+        // }
+
+        let limits = vx_mins.into_iter().zip(vx_maxs.into_iter().rev())
+                                      .filter(|(mn,mx)| *mn >= *mx)
+                                      .collect::<Vec<_>>();
+
+        // if do_print {
+        //     println!("Limits: {:?}", limits);
+        // }
+        limits
+    };
+
+    let vxlims = find_limits(0);
+    let vylims = find_limits(1);
+    let vzlims = find_limits(2);
+
+    #[allow(unused)]
+    let mut counter = 0;
+
+    let vx0 = rays[0].1[0];
+    let vy0 = rays[0].1[1];
+    let vz0 = rays[0].1[2];
+    let vx1 = rays[1].1[0];
+    let vy1 = rays[1].1[1];
+    let vz1 = rays[1].1[2];
+    let x0 = rays[0].0[0];
+    let y0 = rays[0].0[1];
+    let z0 = rays[0].0[2];
+    let x1 = rays[1].0[0];
+    let y1 = rays[1].0[1];
+    let z1 = rays[1].0[2];
+
+    let mut magic_stone = 0;
+    
+    'find_loop: for (xmax, xmin) in vxlims.iter() {
+        for (ymax, ymin) in vylims.iter() {
+            for (zmax, zmin) in vzlims.iter() {
+                for vx in *xmin..=*xmax {
+                    for vy in *ymin..=*ymax {
+                        for vz in *zmin..=*zmax {
+                            // a = b*t0
+                            let a = ((vy1-vy) as i64)*(x0-x1) - ((vx1-vx) as i64)*(y0-y1);
+                            let b = ((vx1-vx)*(vy0-vy) - (vy1-vy)*(vx0-vx)) as i64;
+
+                            if b != 0 && a % b == 0 {
+                                let t0 = a / b;
+
+                                let a = (x0 - x1) + (vx0 - vx) as i64 * t0;
+                                let b = (vx1 - vx) as i64;
+
+                                if b != 0 && a % b == 0 {
+                                    let t1 = a / b;
+
+                                    if (vz1 - vz) as i64 * t1 == (z0 - z1) + (vz0 - vz) as i64 * t0 {
+                                        let x = x0 + (vx0 - vx) as i64 * t0;
+                                        let y = y0 + (vy0 - vy) as i64 * t0;
+                                        let z = z0 + (vz0 - vz) as i64 * t0;
+
+                                        // if do_print {
+                                        //     println!("Found candidate: p={},{},{} v={},{},{} t0={}, t1={}", x,y,z, vx,vy,vz, t0, t1);
+                                        // }
+                                        
+                                        magic_stone = x+y+z;
+
+                                        break 'find_loop;
+                                    }
+                                }
+                            }
+                            counter += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // if do_print {
+    //     println!("Had to check {} velocities", counter);
+    // }
+
+
 
     if do_print {
         println!("Problem 24 A: {}", intersections);
+        println!("Problem 24 B: {}", magic_stone);
     }
 }
 fn main() {
