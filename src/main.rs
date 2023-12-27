@@ -3,6 +3,7 @@
 use core::fmt::{Debug, Display};
 use std::cmp::{max, min};
 use std::collections::{BinaryHeap, HashMap, VecDeque};
+use std::mem::swap;
 use std::time::Duration;
 
 fn problem1ab(do_print: bool, folder: &str) {
@@ -4141,6 +4142,164 @@ fn problem24ab(do_print: bool, folder: &str) {
         println!("Problem 24 B: {}", magic_stone);
     }
 }
+
+
+fn problem25ab(do_print: bool, folder: &str) {
+    let data = std::fs::read(folder.to_owned() + "/25.in").unwrap();
+
+    let mut ids = vec![-1; 26*26*26];
+    let mut next_id: i32 = 0;
+
+    let mut read_id = |i: usize| -> usize {
+        let a = data[i+0] as usize - 'a' as usize;
+        let b = data[i+1] as usize - 'a' as usize;
+        let c = data[i+2] as usize - 'a' as usize;
+        
+        let name = a * 26 * 26 + b * 26 + c;
+        if ids[name] < 0 {
+            ids[name] = next_id;
+            next_id += 1;
+        }
+
+        ids[name] as usize
+    };
+
+    let mut graph = vec![];
+
+    let mut register_edge = |i: usize, j: usize| {
+        if max(i,j) >= graph.len() {
+            graph.resize(max(i,j)+1, vec![]);
+        }
+
+        graph[i].push(j as u32);
+        graph[j].push(i as u32);
+    };
+
+    let mut i = 0;
+    while i < data.len() {
+        let from = read_id(i); i += 4;
+
+        while data[i] as char == ' ' {
+            i += 1;
+            let to = read_id(i); i += 3;
+
+            register_edge(from, to);
+        }
+        i+=1;
+    }
+
+    let n = graph.len();
+
+    // if do_print {
+    //     for i in 0..n {
+    //         println!("{} -> {:?}", i, graph[i]);
+    //     }
+    // }
+
+    // if do_print {
+    //     let degrees = graph.iter().map(Vec::len);
+    //     println!("Node count: {}", n);
+    //     println!("Edge count: {}", degrees.clone().sum::<usize>());
+    //     println!("Maximum degree: {}", degrees.max().unwrap());
+    // }
+
+    const INFINITE: u32 = 0xFFFFFFFF;
+
+    let max_flow = |s: u32, t: u32| -> (usize, Vec<bool>) {
+        let mut edge_legal = vec![true; n*n];
+
+        for flow in 0.. {
+            let mut parents = vec![INFINITE; n];
+            let mut q = Vec::new();
+            let mut q2 = vec![];
+            q.push(s);
+            parents[s as usize] = s;
+
+            // if do_print { println!("Looking for flow nr {}", flow) }
+        
+            'bfs: while !q.is_empty() {
+                // if do_print {println!("  Q = {:?}", q)}
+
+                while let Some(p) = q.pop() {
+                    for next in graph[p as usize].iter() {
+                        if parents[*next as usize] == INFINITE && edge_legal[(p*n as u32 + next) as usize] {
+                            parents[*next as usize] = p;
+                            if *next == t {
+                                break 'bfs;
+                            }
+                            q2.push(*next);
+                        }
+                    }
+                }
+                swap(&mut q, &mut q2);
+            }
+
+            if parents[t as usize] == INFINITE || flow == 4 {
+                // if do_print { println!("Found flows: {} between {} and {}", flow, s, t) }
+                return (flow, edge_legal);
+            }
+
+            let mut c = t;
+            while c != s {
+                let p = parents[c as usize];
+                edge_legal[(p*n as u32 + c) as usize] = false;
+                c = p;
+            }
+        
+            // if do_print {
+            //     let mut c = t;
+            //     print!(" -> Found path: {}", t);
+            //     while c != s {
+            //         c = parents[c];
+            //         print!(" <- {}", c);
+            //     }
+            //     println!();
+            // }
+        }
+
+        (0, edge_legal)
+    };
+
+    let step = 524287;
+
+    let mut other_group = 0;
+
+    let mut i = step % n as u32;
+    while i != 0 {
+        let (flows, edge_legal) = max_flow(0, i);
+
+        if flows <= 3 {
+            let mut q = vec![0u32];
+
+            let mut visited = vec![false; n];
+            visited[0] = true;
+
+            while !q.is_empty() {
+                while let Some(p) = q.pop() {
+                    for next in graph[p as usize].iter() {
+                        if !visited[*next as usize] && edge_legal[(p*n as u32 + next) as usize] {
+                            visited[*next as usize] = true;
+                            q.push(*next);
+                        }
+                    }
+                }
+            }
+
+            other_group = visited.into_iter().map(|b|b as usize).sum::<usize>();
+
+            break;
+        }
+
+        i = (i + step) % n as u32;
+    }
+
+    let group_product = other_group * (n - other_group);
+
+    if do_print {
+        println!("Problem 25 A: {}", group_product);
+    }
+}
+
 fn main() {
     let problems = [
         // problem1ab,
@@ -4167,11 +4326,12 @@ fn main() {
         // problem21ab,
         // problem22ab,
         // problem23ab,
-        problem24ab,
+        // problem24ab,
+        problem25ab,
     ];
     let folder = "input";
 
-    let number_of_runs = 100;
+    let number_of_runs = 10;
     println!(
         "Running solutions {} times, to collect timing",
         number_of_runs
