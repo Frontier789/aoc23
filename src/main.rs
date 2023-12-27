@@ -4205,8 +4205,8 @@ fn problem25ab(do_print: bool, folder: &str) {
 
     const INFINITE: u32 = 0xFFFFFFFF;
 
-    let max_flow = |s: u32, t: u32| -> (usize, Vec<bool>) {
-        let mut edge_legal = vec![true; n*n];
+    let max_flow = |s: u32, t: u32| -> (usize, Vec<Vec<u32>>) {
+        let mut out_edges = graph.clone();
 
         for flow in 0.. {
             let mut parents = vec![INFINITE; n];
@@ -4221,8 +4221,8 @@ fn problem25ab(do_print: bool, folder: &str) {
                 // if do_print {println!("  Q = {:?}", q)}
 
                 while let Some(p) = q.pop() {
-                    for next in graph[p as usize].iter() {
-                        if parents[*next as usize] == INFINITE && edge_legal[(p*n as u32 + next) as usize] {
+                    for next in out_edges[p as usize].iter() {
+                        if *next != INFINITE && parents[*next as usize] == INFINITE {
                             parents[*next as usize] = p;
                             if *next == t {
                                 break 'bfs;
@@ -4236,13 +4236,19 @@ fn problem25ab(do_print: bool, folder: &str) {
 
             if parents[t as usize] == INFINITE || flow == 4 {
                 // if do_print { println!("Found flows: {} between {} and {}", flow, s, t) }
-                return (flow, edge_legal);
+                return (flow, out_edges);
             }
 
             let mut c = t;
             while c != s {
                 let p = parents[c as usize];
-                edge_legal[(p*n as u32 + c) as usize] = false;
+
+                for out in out_edges[p as usize].iter_mut() {
+                    if *out == c {
+                        *out = INFINITE;
+                    }
+                }
+
                 c = p;
             }
         
@@ -4257,7 +4263,7 @@ fn problem25ab(do_print: bool, folder: &str) {
             // }
         }
 
-        (0, edge_legal)
+        (0, out_edges)
     };
 
     let step = 524287;
@@ -4266,7 +4272,7 @@ fn problem25ab(do_print: bool, folder: &str) {
 
     let mut i = step % n as u32;
     while i != 0 {
-        let (flows, edge_legal) = max_flow(0, i);
+        let (flows, out_edges) = max_flow(0, i);
 
         if flows <= 3 {
             let mut q = vec![0u32];
@@ -4276,8 +4282,8 @@ fn problem25ab(do_print: bool, folder: &str) {
 
             while !q.is_empty() {
                 while let Some(p) = q.pop() {
-                    for next in graph[p as usize].iter() {
-                        if !visited[*next as usize] && edge_legal[(p*n as u32 + next) as usize] {
+                    for next in out_edges[p as usize].iter() {
+                        if *next != INFINITE && !visited[*next as usize] {
                             visited[*next as usize] = true;
                             q.push(*next);
                         }
