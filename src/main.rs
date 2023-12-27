@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 use core::fmt::{Debug, Display};
-use std::cmp::{max, min, Reverse};
-use std::collections::{BinaryHeap, HashMap, VecDeque};
+use std::cmp::{max, min};
+use std::collections::{HashMap, VecDeque};
 use std::mem::swap;
 use std::time::Duration;
 
@@ -2430,94 +2430,99 @@ fn problem17ab(do_print: bool, folder: &str) {
     // }
 
     
-    #[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
-    struct State {
-        loss: u32,
-        p: u32,
-    }
     const INFINITE: u32 = 0xFFFFFFFF;
 
     let find_minimum_loss = |min_step: u32, max_step: u32| {
         let mut mlosses = vec![INFINITE; w*h*2];
 
-        let mut pq = BinaryHeap::new();
-        pq.push(Reverse(State { loss: 0, p: 0}));
-        pq.push(Reverse(State { loss: 0, p: 1}));
+        let mut qs = vec![vec![]; 91];
+        qs[0].push(0);
+        qs[0].push(1);
 
         mlosses[0] = 0;
         mlosses[1] = 0;
 
-        let consider_loss = |q: u32, next_hor: u32, loss: u32, bh: &mut BinaryHeap<Reverse<State>>, mlosses: &mut Vec<u32>| {
+        let consider_loss = |q: u32, next_hor: u32, loss: u32, qs: &mut Vec<Vec<u32>>, mlosses: &mut Vec<u32>| {
             // if do_print {println!("Considering q={} with loss={} hor={}", q, loss, next_hor)}
             
             let q = q*2 + next_hor;
 
             if mlosses[q as usize] > loss {
                 mlosses[q as usize] = loss;
-                bh.push(Reverse(State{p: q, loss}));
+                qs[loss as usize % 91].push(q);
             }
         };
 
-        while let Some(Reverse(State{loss, p})) = pq.pop() {
-            let horizontal = (p&1) == 0;
-            let next_horizontal = 1 - (p&1);
-            let p = p>>1;
-
-            if p == (w*h-1) as u32 {
-                break;
-            }
-
-            // if do_print {
-            //     println!("Processing State(p: {}, loss: {}, hor: {})", p, loss, horizontal);
-            // }
-
-            // if do_print {
-            //     for i in 0..h {
-            //         for j in 0..w {
-            //             let v = min(mlosses[(i*w + j)*2+0], mlosses[(i*w + j)*2+1]);
-            //             if v == INFINITE {print!(" [] ");} else {print!("{:>3} ", v);}
-            //         }
-            //         println!();
-            //     }
-            //     println!();
-            // }
-
-            let step = if horizontal {1} else {w as u32};
-            let col = p % w as u32;
-
-            let mut q = p;
-            let mut new_loss = loss;
-            for i in 1..=max_step {
-                q += step;
-
-                if q >= (w*h) as u32 || (horizontal && col+i >= w as u32) {
+        let mut loss: u32 = 0;
+        
+        loop {
+            while let Some(p) = qs[loss as usize % 91].pop() {
+                let horizontal = (p&1) == 0;
+                let next_horizontal = 1 - (p&1);
+                let p = p>>1;
+    
+                if p == (w*h-1) as u32 {
                     break;
+                }
+    
+                // if do_print {
+                //     println!("Processing State(p: {}, loss: {}, hor: {})", p, loss, horizontal);
+                // }
+    
+                // if do_print {
+                //     for i in 0..h {
+                //         for j in 0..w {
+                //             let v = min(mlosses[(i*w + j)*2+0], mlosses[(i*w + j)*2+1]);
+                //             if v == INFINITE {print!(" [] ");} else {print!("{:>3} ", v);}
+                //         }
+                //         println!();
+                //     }
+                //     println!();
+                // }
+    
+                let step = if horizontal {1} else {w as u32};
+                let col = p % w as u32;
+    
+                let mut q = p;
+                let mut new_loss = loss;
+                for i in 1..=max_step {
+                    q += step;
+    
+                    if q >= (w*h) as u32 || (horizontal && col+i >= w as u32) {
+                        break;
+                    }
+                    
+                    new_loss += cost[q as usize];
+    
+                    if i >= min_step {
+                        consider_loss(q, next_horizontal, new_loss, &mut qs, &mut mlosses);
+                    }
                 }
                 
-                new_loss += cost[q as usize];
-
-                if i >= min_step  {
-                    consider_loss(q, next_horizontal, new_loss, &mut pq, &mut mlosses);
+                let mut q = p;
+                let mut new_loss = loss;
+                for i in 1..=max_step {
+                    if q < step || (horizontal && col < i) {
+                        break;
+                    }
+    
+                    q -= step;
+                    new_loss += cost[q as usize];
+    
+                    if i >= min_step {
+                        consider_loss(q, next_horizontal, new_loss, &mut qs, &mut mlosses);
+                    }
                 }
+    
             }
-            
-            let mut q = p;
-            let mut new_loss = loss;
-            for i in 1..=max_step {
-                if q < step || (horizontal && col < i) {
-                    break;
-                }
+            loss += 1;
 
-                q -= step;
-                new_loss += cost[q as usize];
+            let final_loss = min(mlosses[2*(w*h-1)+0], mlosses[2*(w*h-1)+1]);
 
-                if i >= min_step  {
-                    consider_loss(q, next_horizontal, new_loss, &mut pq, &mut mlosses);
-                }
+            if final_loss != INFINITE {
+                return final_loss;
             }
         }
-
-        min(mlosses[2*(w*h-1)+0], mlosses[2*(w*h-1)+1])
     };
 
 
