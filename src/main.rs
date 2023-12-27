@@ -473,82 +473,6 @@ fn problem4ab(do_print: bool, folder: &str) {
     }
 }
 
-fn problem5a(do_print: bool, folder: &str) {
-    let data = std::fs::read(folder.to_owned() + "/5.in").unwrap();
-
-    let mut i = 0;
-    while data[i] as char != ':' {
-        i += 1;
-    }
-    i += 1; // colon (:)
-
-    let mut seeds = Vec::with_capacity(20);
-
-    while data[i] as char != '\n' {
-        i += 1; // space ( )
-
-        let mut num = 0;
-        while data[i] as char >= '0' && data[i] as char <= '9' {
-            num = num * 10 + data[i] as u32 - '0' as u32;
-            i += 1;
-        }
-
-        seeds.push(num);
-    }
-    i += 1; // linefeed (\n)
-
-    while i < data.len() {
-        while data[i] as char != ':' {
-            i += 1;
-        }
-        i += 2; // colon (:) + linefeed (\n)
-
-        // if do_print { println!("i after : finding = {}",i); }
-
-        let mut new_seeds = seeds.clone();
-
-        // loop until empty line
-        while i < data.len() && data[i] as char != '\n' {
-            let mut a = 0;
-            let mut b = 0;
-            let mut c = 0;
-            while data[i] as char != ' ' {
-                a = a * 10 + data[i] as u32 - '0' as u32;
-                i += 1;
-            }
-            i += 1; // space ( )
-            while data[i] as char != ' ' {
-                b = b * 10 + data[i] as u32 - '0' as u32;
-                i += 1;
-            }
-            i += 1; // space ( )
-            while data[i] as char != '\n' {
-                c = c * 10 + data[i] as u32 - '0' as u32;
-                i += 1;
-            }
-            i += 1; // linefeed (\n)
-
-            // if do_print { println!("a,b,c = {} {} {}",a,b,c); }
-
-            for j in 0..seeds.len() {
-                if seeds[j] >= b && seeds[j] < b + c {
-                    new_seeds[j] = a + seeds[j] - b;
-                }
-            }
-        }
-        i += 1; // linefeed (\n)
-
-        seeds = new_seeds;
-
-        // if do_print { println!("Seeds = {:?}", seeds); }
-        // if do_print { println!(); }
-    }
-
-    if do_print {
-        println!("Problem 5 A: {}", seeds.into_iter().min().unwrap());
-    }
-}
-
 #[derive(Clone)]
 struct Range {
     begin: u32,
@@ -611,7 +535,7 @@ impl Debug for Range {
     }
 }
 
-fn problem5b(do_print: bool, folder: &str) {
+fn problem5ab(do_print: bool, folder: &str) {
     let data = std::fs::read(folder.to_owned() + "/5.in").unwrap();
 
     let mut i = 0;
@@ -620,6 +544,78 @@ fn problem5b(do_print: bool, folder: &str) {
     }
     i += 1; // colon (:)
 
+    // part 1
+    {
+        let mut i = i;
+
+        let mut seeds = Vec::with_capacity(20);
+
+        while data[i] as char != '\n' {
+            i += 1; // space ( )
+
+            let mut num = 0;
+            while data[i] as char >= '0' && data[i] as char <= '9' {
+                num = num * 10 + data[i] as u32 - '0' as u32;
+                i += 1;
+            }
+
+            seeds.push(num);
+        }
+        i += 1; // linefeed (\n)
+
+        while i < data.len() {
+            while data[i] as char != ':' {
+                i += 1;
+            }
+            i += 2; // colon (:) + linefeed (\n)
+
+            // if do_print { println!("i after : finding = {}",i); }
+
+            let mut new_seeds = seeds.clone();
+
+            // loop until empty line
+            while i < data.len() && data[i] as char != '\n' {
+                let mut a = 0;
+                let mut b = 0;
+                let mut c = 0;
+                while data[i] as char != ' ' {
+                    a = a * 10 + data[i] as u32 - '0' as u32;
+                    i += 1;
+                }
+                i += 1; // space ( )
+                while data[i] as char != ' ' {
+                    b = b * 10 + data[i] as u32 - '0' as u32;
+                    i += 1;
+                }
+                i += 1; // space ( )
+                while data[i] as char != '\n' {
+                    c = c * 10 + data[i] as u32 - '0' as u32;
+                    i += 1;
+                }
+                i += 1; // linefeed (\n)
+
+                // if do_print { println!("a,b,c = {} {} {}",a,b,c); }
+
+                for j in 0..seeds.len() {
+                    if seeds[j] >= b && seeds[j] < b + c {
+                        new_seeds[j] = a + seeds[j] - b;
+                    }
+                }
+            }
+            i += 1; // linefeed (\n)
+
+            seeds = new_seeds;
+
+            // if do_print { println!("Seeds = {:?}", seeds); }
+            // if do_print { println!(); }
+        }
+
+        if do_print {
+            println!("Problem 5 A: {}", seeds.into_iter().min().unwrap());
+        }
+    }
+
+    // part 2
     let mut seed_ranges = Vec::with_capacity(40);
 
     while data[i] as char != '\n' {
@@ -4424,32 +4420,31 @@ fn problem25ab(do_print: bool, folder: &str) {
 
 fn main() {
     let problems = [
-        // problem1ab,
-        // problem2ab,
-        // problem3ab,
-        // problem4ab,
-        // problem5a,
-        // problem5b,
-        // problem6ab,
-        // problem7ab,
-        // problem8ab,
-        // problem9ab,
-        // problem10ab,
-        // problem11ab,
-        // problem12ab,
-        // problem13ab,
-        // problem14ab,
-        // problem15ab,
-        // problem16ab,
+        problem1ab,
+        problem2ab,
+        problem3ab,
+        problem4ab,
+        problem5ab,
+        problem6ab,
+        problem7ab,
+        problem8ab,
+        problem9ab,
+        problem10ab,
+        problem11ab,
+        problem12ab,
+        problem13ab,
+        problem14ab,
+        problem15ab,
+        problem16ab,
         problem17ab,
-        // problem18ab,
-        // problem19ab,
-        // problem20ab,
-        // problem21ab,
-        // problem22ab,
-        // problem23ab,
-        // problem24ab,
-        // problem25ab,
+        problem18ab,
+        problem19ab,
+        problem20ab,
+        problem21ab,
+        problem22ab,
+        problem23ab,
+        problem24ab,
+        problem25ab,
     ];
     let folder = "input";
 
