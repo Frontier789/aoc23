@@ -3170,16 +3170,48 @@ fn problem20ab(do_print: bool, folder: &str) {
             }
         }
     };
-        
+
     let mut sent_high = 0;
     let mut sent_low  = 0;
 
-    for _ in 0..1000 {
+    for _i in 1..1000 {
         press(&mut sent_low, &mut sent_high);
+    }
+    
+    fn gcd(mut m: u64, mut n: u64) -> u64 {
+        while m != 0 {
+            let old_m = m;
+            m = n % m;
+            n = old_m;
+        }
+        n
+    }
+
+    let mut finish_time = 1u64;
+
+    for &s in broadcasted.iter() {
+        let mut period = 0;
+        let mut bit = 1;
+        let mut i = Some(s);
+        while let Some(id) = i {
+            let mut next = None;
+            for &to in out_edges[id as usize].iter() {
+                if matches!(node_types[to as usize], Type::Conjunction(_)) {
+                    period |= bit;
+                } else {
+                    next = Some(to);
+                }
+            }
+            i = next;
+            bit <<= 1;
+        }
+        // if do_print { println!("Found: {}", period); }
+        finish_time = finish_time * period / gcd(finish_time, period);
     }
     
     if do_print {
         println!("Problem 20 A: {}", sent_low * sent_high);
+        println!("Problem 20 B: {}", finish_time);
     }
 }
 
